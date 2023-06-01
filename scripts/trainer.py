@@ -32,8 +32,8 @@ def train_agent(env_name, agent_name, num_episodes):
 
     plt.ioff()
 
-    # Save the trained agent
-    agent.save_model("dqn_policy_three.pt")
+    # Save the trained agent weights
+    agent.save_model("dqn_policy.pt")
 
 
 if __name__ == "__main__":
