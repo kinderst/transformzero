@@ -16,29 +16,28 @@ from models.dqn_model import DQN
 
 
 class DQNAgent:
-    def __init__(self, env):
+    def __init__(self, env, batch_size=128, gamma=0.99, eps_start=0.9, eps_end=0.05, eps_decay=1000, tau=0.005, lr=1e-4):
         # environment
         self.env = env
 
         # constants
-        self.batch_size = 128 # the number of transitions sampled from the replay buffer
-        self.gamma = 0.99 # the discount factor
-        self.eps_start = 0.9 # the starting value of epsilon
-        self.eps_end = 0.05 # the final value of epsilon
-        self.eps_decay = 1000 # controls the rate of exponential decay of epsilon, higher means a slower decay
-        self.tau = 0.005 # the update rate of the target network
-        self.lr = 1e-4 # the learning rate of the optimizer
+        self.batch_size = batch_size  # the number of transitions sampled from the replay buffer
+        self.gamma = gamma  # the discount factor
+        self.eps_start = eps_start  # the starting value of epsilon
+        self.eps_end = eps_end  # the final value of epsilon
+        self.eps_decay = eps_decay  # controls the rate of exponential decay of epsilon, higher means a slower decay
+        self.tau = tau  # the update rate of the target network
 
         # torch, networks
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         # get values for policy/target net dims
-        n_actions = env.action_space.n
+        n_actions = self.env.action_space.n
         observation, _ = self.env.reset()
         n_observations = len(observation)
         self.policy_net = DQN(n_observations, n_actions).to(self.device)
         self.target_net = DQN(n_observations, n_actions).to(self.device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
-        self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=self.lr, amsgrad=True)
+        self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=lr, amsgrad=True)
 
         # replay memory
         self.Transition = namedtuple('Transition',
@@ -49,10 +48,8 @@ class DQNAgent:
         self.steps_done = 0
         self.episode_durations = []
 
-    def select_action(self, state):
+    def select_action(self, state, eps_threshold):
         sample = random.random()
-        eps_threshold = self.eps_end + (self.eps_start - self.eps_end) * \
-                        math.exp(-1. * self.steps_done / self.eps_decay)
         self.steps_done += 1
         if sample > eps_threshold:
             with torch.no_grad():
@@ -115,7 +112,9 @@ class DQNAgent:
             state, info = self.env.reset()
             state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
             for t in count():
-                action = self.select_action(state)
+                eps_threshold = self.eps_end + (self.eps_start - self.eps_end) * \
+                                math.exp(-1. * self.steps_done / self.eps_decay)
+                action = self.select_action(state, eps_threshold)
                 observation, reward, terminated, truncated, _ = self.env.step(action.item())
                 reward = torch.tensor([reward], device=self.device)
                 done = terminated or truncated
@@ -171,6 +170,7 @@ class DQNAgent:
         print(f"saving model to {filepath}")
         torch.save(self.policy_net.state_dict(), filepath)
 
-    # def load_model(self, filepath):
     # Load the agent's model or parameters from a file
-    # ...
+    def load_model(self, filepath):
+        print(f"loading model {filepath}")
+        self.policy_net.load_state_dict(torch.load(filepath))
