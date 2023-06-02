@@ -109,6 +109,7 @@ class DQNAgent:
     def train(self, num_episodes):
         for i_episode in range(num_episodes):
             # Initialize the environment and get it's state
+            total_reward = 0
             state, info = self.env.reset()
             state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
             for t in count():
@@ -116,6 +117,7 @@ class DQNAgent:
                                 math.exp(-1. * self.steps_done / self.eps_decay)
                 action = self.select_action(state, eps_threshold)
                 observation, reward, terminated, truncated, _ = self.env.step(action.item())
+                total_reward += reward
                 reward = torch.tensor([reward], device=self.device)
                 done = terminated or truncated
 
@@ -142,7 +144,7 @@ class DQNAgent:
                 self.target_net.load_state_dict(target_net_state_dict)
 
                 if done:
-                    self.episode_durations.append(t + 1)
+                    self.episode_durations.append(total_reward)
                     self.plot_durations()
                     break
 

@@ -9,14 +9,17 @@ from itertools import count
 
 def eval_step_episode(env_name, agent_name, weights_path):
     # Initialize environment
-    env = gym.make(env_name, render_mode="human")
+    if env_name == "cartpole":
+        env = gym.make("CartPole-v1", render_mode="human")
+    elif env_name == "lunar":
+        env = gym.make("LunarLander-v2", render_mode="human")
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Initialize agent
-    if agent_name == "DQNAgent":
+    if agent_name == "dqn":
         agent = DQNAgent(env)
-    elif agent_name == "PPOAgent":
+    elif agent_name == "ppo":
         return
     else:
         print(f"No agents with the name: {str(agent_name)} found, exiting...")
@@ -38,8 +41,8 @@ def eval_step_episode(env_name, agent_name, weights_path):
 if __name__ == "__main__":
     # Parse command-line arguments
     parser = argparse.ArgumentParser(description="Train My DRL Agent")
-    parser.add_argument("--env", type=str, default="CartPole-v1", help="Environment name")
-    parser.add_argument("--agent", type=str, default="DQNAgent", help="Agent name")
+    parser.add_argument("--env", type=str, default="cartpole", help="Environment name")
+    parser.add_argument("--agent", type=str, default="dqn", help="Agent name")
     parser.add_argument("--weights", type=str, default="dqn_policy.pt", help="Path to weights")
     args = parser.parse_args()
 

@@ -1,2 +1,6 @@
 numpy
 gymnasium
+
+matplotlib
+torch
+setuptools
