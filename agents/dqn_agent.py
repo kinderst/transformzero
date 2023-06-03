@@ -13,12 +13,14 @@ import torch.nn as nn
 
 from buffers.dqn_replay_memory import ReplayMemory
 from models.dqn_model import DQN
+from agents.agent import Agent
 
 
-class DQNAgent:
+class DQNAgent(Agent):
     def __init__(self, env, batch_size=128, gamma=0.99, eps_start=0.9, eps_end=0.05, eps_decay=1000, tau=0.005, lr=1e-4):
+        super().__init__(env)
         # environment
-        self.env = env
+        # self.env = env
 
         # constants
         self.batch_size = batch_size  # the number of transitions sampled from the replay buffer
@@ -47,18 +49,70 @@ class DQNAgent:
         # counters, recording
         self.steps_done = 0
         self.episode_durations = []
+        self.fixed_eps = True  # start with epsilon fixed (to end value), train turns it False
 
-    def select_action(self, state, eps_threshold):
+    def select_action(self, obs: np.ndarray) -> int:
         sample = random.random()
         self.steps_done += 1
+        # sometimes we want to have a fixed epsilon (to the final epsilon value)
+        # i.e. during inference, other times we want it to decay with steps (training)
+        if self.fixed_eps:
+            eps_threshold = self.eps_end
+        else:
+            eps_threshold = self.eps_end + (self.eps_start - self.eps_end) * \
+                            math.exp(-1. * self.steps_done / self.eps_decay)
         if sample > eps_threshold:
+            obs = torch.tensor(obs, dtype=torch.float32, device=self.device).unsqueeze(0)
             with torch.no_grad():
                 # t.max(1) will return the largest column value of each row.
                 # second column on max result is index of where max element was
                 # found, so we pick action with the larger expected reward.
-                return self.policy_net(state).max(1)[1].view(1, 1)
+                return self.policy_net(obs).max(1)[1].view(1, 1).item()
         else:
-            return torch.tensor([[self.env.action_space.sample()]], device=self.device, dtype=torch.long)
+            return self.env.action_space.sample()
+
+    def train(self, num_episodes: int) -> None:
+        self.fixed_eps = False
+        for i_episode in range(num_episodes):
+            # Initialize the environment and get it's state
+            total_reward = 0
+            observation, info = self.env.reset()
+            observation_tensor = torch.tensor(observation, dtype=torch.float32, device=self.device).unsqueeze(0)
+            for t in count():
+                action = self.select_action(observation)
+                action_tensor = torch.tensor([[action]], device=self.device, dtype=torch.long)
+                next_observation, reward, terminated, truncated, _ = self.env.step(action)
+                total_reward += reward
+                reward_tensor = torch.tensor([reward], device=self.device)
+                done = terminated or truncated
+
+                if terminated:
+                    next_observation_tensor = None
+                else:
+                    next_observation_tensor = torch.tensor(next_observation, dtype=torch.float32, device=self.device).unsqueeze(0)
+
+                # Store the transition in memory
+                self.memory.push(observation_tensor, action_tensor, next_observation_tensor, reward_tensor)
+
+                # Move to the next state
+                observation = next_observation
+                observation_tensor = next_observation_tensor
+
+                # Perform one step of the optimization (on the policy network)
+                self.optimize_model()
+
+                # Soft update of the target network's weights
+                # θ′ ← τ θ + (1 −τ )θ′
+                target_net_state_dict = self.target_net.state_dict()
+                policy_net_state_dict = self.policy_net.state_dict()
+                for key in policy_net_state_dict:
+                    target_net_state_dict[key] = policy_net_state_dict[key]*self.tau + target_net_state_dict[key]*(1-self.tau)
+                self.target_net.load_state_dict(target_net_state_dict)
+
+                if done:
+                    self.episode_durations.append(total_reward)
+                    self.plot_durations()
+                    break
 
     def optimize_model(self):
         if len(self.memory) < self.batch_size:
@@ -106,47 +160,13 @@ class DQNAgent:
         torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 100)
         self.optimizer.step()
 
-    def train(self, num_episodes):
-        for i_episode in range(num_episodes):
-            # Initialize the environment and get it's state
-            total_reward = 0
-            state, info = self.env.reset()
-            state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
-            for t in count():
-                eps_threshold = self.eps_end + (self.eps_start - self.eps_end) * \
-                                math.exp(-1. * self.steps_done / self.eps_decay)
-                action = self.select_action(state, eps_threshold)
-                observation, reward, terminated, truncated, _ = self.env.step(action.item())
-                total_reward += reward
-                reward = torch.tensor([reward], device=self.device)
-                done = terminated or truncated
-
-                if terminated:
-                    next_state = None
-                else:
-                    next_state = torch.tensor(observation, dtype=torch.float32, device=self.device).unsqueeze(0)
-
-                # Store the transition in memory
-                self.memory.push(state, action, next_state, reward)
-
-                # Move to the next state
-                state = next_state
-
-                # Perform one step of the optimization (on the policy network)
-                self.optimize_model()
-
-                # Soft update of the target network's weights
-                # θ′ ← τ θ + (1 −τ )θ′
-                target_net_state_dict = self.target_net.state_dict()
-                policy_net_state_dict = self.policy_net.state_dict()
-                for key in policy_net_state_dict:
-                    target_net_state_dict[key] = policy_net_state_dict[key]*self.tau + target_net_state_dict[key]*(1-self.tau)
-                self.target_net.load_state_dict(target_net_state_dict)
-
-                if done:
-                    self.episode_durations.append(total_reward)
-                    self.plot_durations()
-                    break
+    def investigate_model_outputs(self, obs: np.ndarray) -> np.ndarray:
+        obs = torch.tensor(obs, dtype=torch.float32, device=self.device).unsqueeze(0)
+        with torch.no_grad():
+            # t.max(1) will return the largest column value of each row.
+            # second column on max result is index of where max element was
+            # found, so we pick action with the larger expected reward.
+            return self.policy_net(obs).detach().numpy()
 
     def plot_durations(self, show_result=False):
         plt.figure(1)

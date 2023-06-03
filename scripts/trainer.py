@@ -1,5 +1,6 @@
 import argparse
 from agents.dqn_agent import DQNAgent
+from environments.grid_world_env import GridWorldEnv
 # from environments.my_environment import MyEnvironment
 import gymnasium as gym
 import matplotlib.pyplot as plt
@@ -12,6 +13,8 @@ def train_agent(env_name, agent_name, num_episodes):
         env = gym.make("CartPole-v1")
     elif env_name == "lunar":
         env = gym.make("LunarLander-v2")
+    elif env_name == "grid":
+        env = gym.make(GridWorldEnv)
     else:
         print(f"No envs with name: {str(env_name)} found, exiting...")
         return
