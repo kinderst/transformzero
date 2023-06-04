@@ -166,7 +166,7 @@ class DQNAgent(Agent):
             # t.max(1) will return the largest column value of each row.
             # second column on max result is index of where max element was
             # found, so we pick action with the larger expected reward.
-            return self.policy_net(obs).detach().numpy()
+            return self.policy_net(obs).detach().numpy()[0]
 
     def plot_durations(self, show_result=False):
         plt.figure(1)
@@ -189,8 +189,9 @@ class DQNAgent(Agent):
 
     # Save the agent's model or parameters to a file
     def save_model(self, filepath):
-        print(f"saving model to {filepath}")
-        torch.save(self.policy_net.state_dict(), filepath)
+        print(f"saving model to {filepath}.pt")
+        filepath_with_extension = filepath + ".pt"
+        torch.save(self.policy_net.state_dict(), filepath_with_extension)
 
     # Load the agent's model or parameters from a file
     def load_model(self, filepath):

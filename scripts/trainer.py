@@ -1,5 +1,6 @@
 import argparse
 from agents.dqn_agent import DQNAgent
+from agents.ppo_agent import PPOAgent
 from environments.grid_world_env import GridWorldEnv
 # from environments.my_environment import MyEnvironment
 import gymnasium as gym
@@ -23,7 +24,7 @@ def train_agent(env_name, agent_name, num_episodes):
     if agent_name == "dqn":
         agent = DQNAgent(env)
     elif agent_name == "ppo":
-        return
+        agent = PPOAgent(env)
     else:
         print(f"No agents with the name: {str(agent_name)} found, exiting...")
         return
@@ -37,7 +38,7 @@ def train_agent(env_name, agent_name, num_episodes):
     plt.ioff()
 
     # Save the trained agent weights
-    agent.save_model("dqn_policy_" + str(env_name) + "_" + str(int(time.time())) + ".pt")
+    agent.save_model("model_" + agent_name + "_" + str(env_name) + "_" + str(int(time.time())))
 
 
 if __name__ == "__main__":

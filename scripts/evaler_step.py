@@ -1,11 +1,12 @@
 import argparse
-from agents.dqn_agent import DQNAgent
-from environments.grid_world_env import GridWorldEnv
-# from environments.my_environment import MyEnvironment
 import gymnasium as gym
 import matplotlib.pyplot as plt
 import torch
 from itertools import count
+
+from agents.dqn_agent import DQNAgent
+from agents.ppo_agent import PPOAgent
+from environments.grid_world_env import GridWorldEnv
 
 
 def eval_step_episode(env_name, agent_name, weights_path):
@@ -26,7 +27,7 @@ def eval_step_episode(env_name, agent_name, weights_path):
     if agent_name == "dqn":
         agent = DQNAgent(env)
     elif agent_name == "ppo":
-        return
+        agent = PPOAgent(env)
     else:
         print(f"No agents with the name: {str(agent_name)} found, exiting...")
         return
@@ -40,13 +41,15 @@ def eval_step_episode(env_name, agent_name, weights_path):
     while not done:
         print("press any button to take step")
         #_ = input()
+
         print("observation is: ", observation)
+
         model_outputs = agent.investigate_model_outputs(observation)
         print("model outputs: ", model_outputs)
-        # convert obs to tensor
-        # observation = torch.tensor(observation, dtype=torch.float32, device=device).unsqueeze(0)
+
         action = agent.select_action(observation)
         print("action taken: ", action)
+
         observation, reward, terminated, truncated, _ = env.step(action)
         done = terminated or truncated
 

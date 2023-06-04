@@ -1,6 +1,9 @@
-numpy
+numpy~=1.20.1
 gymnasium
 
-matplotlib
-torch
-setuptools
+matplotlib~=3.3.4
+torch~=1.10.2
+setuptools~=58.5.3
+tensorflow~=2.8.0
+scipy~=1.6.2
+pygame~=2.1.2
