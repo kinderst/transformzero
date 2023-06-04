@@ -21,8 +21,6 @@ def eval_step_episode(env_name, agent_name, weights_path):
         print('err bad env name')
         return
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
     # Initialize agent
     if agent_name == "dqn":
         agent = DQNAgent(env)
@@ -39,8 +37,8 @@ def eval_step_episode(env_name, agent_name, weights_path):
     done = False
     observation, info = env.reset()
     while not done:
-        print("press any button to take step")
-        #_ = input()
+        # print("press any button to take step")
+        # _ = input()
 
         print("observation is: ", observation)
 
