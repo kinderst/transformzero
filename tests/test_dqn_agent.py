@@ -12,22 +12,26 @@ class DQNAgentTests(unittest.TestCase):
         agent = DQNAgent(self.cartpole_env)
         observation, _ = self.cartpole_env.reset()
         n_observations = len(observation)
-        obs = np.arange(1, n_observations+1)
-        action = agent.select_action(obs)
-        self.assertIsInstance(action, int)
-        self.assertGreaterEqual(action, 0)
-        self.assertLess(action, agent.env.action_space.n)
+        num_tests = 10
+        for i in range(num_tests):
+            obs = np.arange(i, n_observations+i) / num_tests
+            action = agent.select_action(obs)
+            self.assertIsInstance(action, int)
+            self.assertGreaterEqual(action, 0)
+            self.assertLess(action, agent.env.action_space.n)
 
     def test_select_action_with_eps(self):
         agent = DQNAgent(self.cartpole_env)
         observation, _ = self.cartpole_env.reset()
         n_observations = len(observation)
-        obs = np.arange(1, n_observations+1)
-        eps_threshold = 0.1
-        action = agent.select_action_with_eps(obs, eps_threshold)
-        self.assertIsInstance(action, int)
-        self.assertGreaterEqual(action, 0)
-        self.assertLess(action, agent.env.action_space.n)
+        num_tests = 10
+        for i in range(num_tests):
+            obs = np.arange(i, n_observations+i) / num_tests
+            eps_threshold = i / num_tests
+            action = agent.select_action_with_eps(obs, eps_threshold)
+            self.assertIsInstance(action, int)
+            self.assertGreaterEqual(action, 0)
+            self.assertLess(action, agent.env.action_space.n)
 
     def test_train(self):
         agent = DQNAgent(self.cartpole_env)

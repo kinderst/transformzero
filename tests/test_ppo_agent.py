@@ -73,7 +73,7 @@ class PPOAgentTests(unittest.TestCase):
                                         early_stopping_threshold=early_stopping_threshold,
                                         show_progress=False)
             avg_train = sum(epoch_rewards[-early_stopping_rounds:]) / early_stopping_rounds
-            print(f"dqn cartpole training average: {avg_train} for attempt: {i}")
+            print(f"ppo cartpole training average: {avg_train} for attempt: {i}")
             if avg_train > early_stopping_threshold:
                 has_converged = True
                 break
@@ -82,7 +82,7 @@ class PPOAgentTests(unittest.TestCase):
 
         eval_results = agent.eval(early_stopping_rounds)
         avg_eval = sum(eval_results) / len(eval_results)
-        print("dqn cartpole eval avg: ", avg_eval)
+        print("ppo cartpole eval avg: ", avg_eval)
         self.assertGreaterEqual(avg_eval, eval_threshold)
 
 
