@@ -1,0 +1,113 @@
+import unittest
+import numpy as np
+from agents.ppo_agent import PPOAgent
+import gymnasium as gym
+import tensorflow as tf
+
+
+class PPOAgentTests(unittest.TestCase):
+    def setUp(self):
+        self.cartpole_env = gym.make("CartPole-v1")
+
+    def test_select_action(self):
+        agent = PPOAgent(self.cartpole_env)
+        observation, _ = self.cartpole_env.reset()
+        n_observations = len(observation)
+        obs = np.arange(1, n_observations+1)
+        action = agent.select_action(obs)
+        self.assertIsInstance(action, int)
+        self.assertGreaterEqual(action, 0)
+        self.assertLess(action, agent.env.action_space.n)
+
+    def test_select_action_with_logits(self):
+        agent = PPOAgent(self.cartpole_env)
+        observation, _ = self.cartpole_env.reset()
+        n_observations = len(observation)
+        obs = np.arange(1, n_observations+1)
+        eps_threshold = 0.1
+        action, logits = agent.select_action_with_logits(obs)
+        self.assertIsInstance(action, int)
+        self.assertGreaterEqual(action, 0)
+        self.assertLess(action, agent.env.action_space.n)
+        self.assertIsInstance(logits, tf.Tensor)
+        self.assertIsInstance(action, tf.Tensor)
+
+    def test_train(self):
+        agent = DQNAgent(self.cartpole_env)
+        epochs = 3
+        episode_rewards = agent.train(epochs)
+        self.assertIsInstance(episode_rewards, list)
+        self.assertEqual(len(episode_rewards), epochs)
+
+    def test_eval(self):
+        agent = DQNAgent(self.cartpole_env)
+        num_episodes = 10
+        episode_rewards = agent.eval(num_episodes)
+        self.assertIsInstance(episode_rewards, list)
+        self.assertEqual(len(episode_rewards), num_episodes)
+        for reward in episode_rewards:
+            self.assertIsInstance(reward, (int, float))
+
+    def test_investigate_model_outputs(self):
+        agent = DQNAgent(self.cartpole_env)
+        observation, _ = self.cartpole_env.reset()
+        n_observations = len(observation)
+        obs = np.arange(1, n_observations+1)
+        outputs = agent.investigate_model_outputs(obs)
+        self.assertIsInstance(outputs, np.ndarray)
+        self.assertEqual(outputs.shape, (agent.env.action_space.n,))
+
+    def test_train_and_eval_cartpole(self):
+        # Tests to see if model can converge on cartpole
+        agent = DQNAgent(self.cartpole_env)
+        early_stopping_rounds = 50
+        early_stopping_threshold = 485.0
+        eval_threshold = 450.0
+        has_converged = False
+        for i in range(3):
+            epoch_rewards = agent.train(650,
+                                        early_stopping_rounds=early_stopping_rounds,
+                                        early_stopping_threshold=early_stopping_threshold,
+                                        show_progress=False)
+            avg_train = sum(epoch_rewards[-early_stopping_rounds:]) / early_stopping_rounds
+            print(f"dqn cartpole training average: {avg_train} for attempt: {i}")
+            if avg_train > early_stopping_threshold:
+                has_converged = True
+                break
+
+        self.assertTrue(has_converged)
+
+        eval_results = agent.eval(early_stopping_rounds)
+        avg_eval = sum(eval_results) / len(eval_results)
+        print("dqn cartpole eval avg: ", avg_eval)
+        self.assertGreaterEqual(avg_eval, eval_threshold)
+
+    def test_train_and_eval_lunar(self):
+        # Tests to see if model can converge on lunar
+        lunar_env = gym.make("LunarLander-v2")
+        agent = DQNAgent(lunar_env)
+        early_stopping_rounds = 50
+        early_stopping_threshold = 200.0
+        eval_threshold = 175.0
+        has_converged = False
+        for i in range(3):
+            epoch_rewards = agent.train(800,
+                                        early_stopping_rounds=early_stopping_rounds,
+                                        early_stopping_threshold=early_stopping_threshold,
+                                        show_progress=False)
+            avg_train = sum(epoch_rewards[-early_stopping_rounds:]) / early_stopping_rounds
+            print(f"dqn lunar training average: {avg_train} for attempt: {i}")
+            if avg_train > early_stopping_threshold:
+                has_converged = True
+                break
+
+        self.assertTrue(has_converged)
+
+        eval_results = agent.eval(early_stopping_rounds)
+        avg_eval = sum(eval_results) / len(eval_results)
+        print("dqn lunar eval avg: ", avg_eval)
+        self.assertGreaterEqual(avg_eval, eval_threshold)
+
+
+if __name__ == '__main__':
+    unittest.main()
