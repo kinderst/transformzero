@@ -11,6 +11,7 @@ class GridWorldEnv(gym.Env):
     def __init__(self, render_mode=None, size=5):
         self._target_location = None
         self._agent_location = None
+        self._obstacles = []
         self.size = size  # The size of the square grid
         self.window_size = 512  # The size of the PyGame window
 
@@ -20,6 +21,7 @@ class GridWorldEnv(gym.Env):
             {
                 "agent": spaces.Box(0, size - 1, shape=(2,), dtype=int),
                 "target": spaces.Box(0, size - 1, shape=(2,), dtype=int),
+                "obstacles": spaces.MultiBinary((size, size)),
             }
         )
 
@@ -52,7 +54,11 @@ class GridWorldEnv(gym.Env):
         self.clock = None
 
     def _get_obs(self):
-        return {"agent": self._agent_location, "target": self._target_location}
+        return {
+            "agent": self._agent_location,
+            "target": self._target_location,
+            "obstacles": self._get_obstacle_matrix(),
+        }
 
     def _get_info(self):
         return {
@@ -60,6 +66,21 @@ class GridWorldEnv(gym.Env):
                 self._agent_location - self._target_location, ord=1
             )
         }
+
+    def _get_obstacle_matrix(self):
+        obstacle_matrix = np.zeros((self.size, self.size))
+        for obstacle in self._obstacles:
+            obstacle_matrix[obstacle[1], obstacle[0]] = 1
+        return obstacle_matrix
+
+    def add_random_obstacles(self, num_obstacles):
+        self._obstacles = []
+        for _ in range(num_obstacles):
+            obstacle = self.np_random.integers(0, self.size, size=2, dtype=int)
+            while np.array_equal(obstacle, self._agent_location) or np.array_equal(obstacle, self._target_location) or \
+                    any((obstacle == obs).all() for obs in self._obstacles):
+                obstacle = self.np_random.integers(0, self.size, size=2, dtype=int)
+            self._obstacles.append(obstacle)
 
     def reset(self, seed=None, options=None):
         # We need the following line to seed self.np_random
@@ -75,6 +96,11 @@ class GridWorldEnv(gym.Env):
                 0, self.size, size=2, dtype=int
             )
 
+        # add random number of obstacles between 0 and size-1 (if it was size, could potentially block path)
+        # though even with 3, it could form a barrier around goal in corner, or 4 could barricade goal
+        # around side..
+        self.add_random_obstacles(self.size - 1)
+
         observation = self._get_obs()
         info = self._get_info()
 
@@ -87,9 +113,18 @@ class GridWorldEnv(gym.Env):
         # Map the action (element of {0,1,2,3}) to the direction we walk in
         direction = self._action_to_direction[action]
         # We use `np.clip` to make sure we don't leave the grid
-        self._agent_location = np.clip(
+        new_location = np.clip(
             self._agent_location + direction, 0, self.size - 1
         )
+
+        # Check if the new location is occupied by an obstacle
+        if any((new_location == obs).all() for obs in self._obstacles):
+            # If it is, don't update the agent's location
+            new_location = self._agent_location
+
+        # Update the agent's location
+        self._agent_location = new_location
+
         # An episode is done iff the agent has reached the target
         terminated = np.array_equal(self._agent_location, self._target_location)
         reward = 1 if terminated else 0  # Binary sparse rewards
@@ -136,6 +171,17 @@ class GridWorldEnv(gym.Env):
             pix_square_size / 3,
             )
 
+        # Draw obstacles
+        for obstacle in self._obstacles:
+            pygame.draw.rect(
+                canvas,
+                (0, 0, 0),
+                pygame.Rect(
+                    pix_square_size * obstacle,
+                    (pix_square_size, pix_square_size),
+                    ),
+            )
+
         # Finally, add some gridlines
         for x in range(self.size + 1):
             pygame.draw.line(
@@ -171,3 +217,4 @@ class GridWorldEnv(gym.Env):
         if self.window is not None:
             pygame.display.quit()
             pygame.quit()
+
