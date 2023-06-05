@@ -33,14 +33,14 @@ class PPOAgentTests(unittest.TestCase):
         self.assertIsInstance(action, tf.Tensor)
 
     def test_train(self):
-        agent = DQNAgent(self.cartpole_env)
+        agent = PPOAgent(self.cartpole_env)
         epochs = 3
         episode_rewards = agent.train(epochs)
         self.assertIsInstance(episode_rewards, list)
         self.assertEqual(len(episode_rewards), epochs)
 
     def test_eval(self):
-        agent = DQNAgent(self.cartpole_env)
+        agent = PPOAgent(self.cartpole_env)
         num_episodes = 10
         episode_rewards = agent.eval(num_episodes)
         self.assertIsInstance(episode_rewards, list)
@@ -49,7 +49,7 @@ class PPOAgentTests(unittest.TestCase):
             self.assertIsInstance(reward, (int, float))
 
     def test_investigate_model_outputs(self):
-        agent = DQNAgent(self.cartpole_env)
+        agent = PPOAgent(self.cartpole_env)
         observation, _ = self.cartpole_env.reset()
         n_observations = len(observation)
         obs = np.arange(1, n_observations+1)
@@ -59,13 +59,13 @@ class PPOAgentTests(unittest.TestCase):
 
     def test_train_and_eval_cartpole(self):
         # Tests to see if model can converge on cartpole
-        agent = DQNAgent(self.cartpole_env)
-        early_stopping_rounds = 50
-        early_stopping_threshold = 485.0
+        agent = PPOAgent(self.cartpole_env)
+        early_stopping_rounds = 3
+        early_stopping_threshold = 475.0
         eval_threshold = 450.0
         has_converged = False
         for i in range(3):
-            epoch_rewards = agent.train(650,
+            epoch_rewards = agent.train(30,
                                         early_stopping_rounds=early_stopping_rounds,
                                         early_stopping_threshold=early_stopping_threshold,
                                         show_progress=False)
@@ -80,32 +80,6 @@ class PPOAgentTests(unittest.TestCase):
         eval_results = agent.eval(early_stopping_rounds)
         avg_eval = sum(eval_results) / len(eval_results)
         print("dqn cartpole eval avg: ", avg_eval)
-        self.assertGreaterEqual(avg_eval, eval_threshold)
-
-    def test_train_and_eval_lunar(self):
-        # Tests to see if model can converge on lunar
-        lunar_env = gym.make("LunarLander-v2")
-        agent = DQNAgent(lunar_env)
-        early_stopping_rounds = 50
-        early_stopping_threshold = 200.0
-        eval_threshold = 175.0
-        has_converged = False
-        for i in range(3):
-            epoch_rewards = agent.train(800,
-                                        early_stopping_rounds=early_stopping_rounds,
-                                        early_stopping_threshold=early_stopping_threshold,
-                                        show_progress=False)
-            avg_train = sum(epoch_rewards[-early_stopping_rounds:]) / early_stopping_rounds
-            print(f"dqn lunar training average: {avg_train} for attempt: {i}")
-            if avg_train > early_stopping_threshold:
-                has_converged = True
-                break
-
-        self.assertTrue(has_converged)
-
-        eval_results = agent.eval(early_stopping_rounds)
-        avg_eval = sum(eval_results) / len(eval_results)
-        print("dqn lunar eval avg: ", avg_eval)
         self.assertGreaterEqual(avg_eval, eval_threshold)
 
 

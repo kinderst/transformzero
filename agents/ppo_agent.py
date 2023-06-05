@@ -56,11 +56,12 @@ class PPOAgent(Agent):
         action = tf.squeeze(tf.random.categorical(logits, 1), axis=1)
         return logits, action
 
-    def train(self, epochs: int, show_progress: bool = False) -> list:
+    def train(self, epochs: int, early_stopping_rounds: int = -1,
+              early_stopping_threshold: float = 200.0, show_progress: bool = False) -> list:
         # Initialize the observation, episode return and episode length
         observation, info = self.env.reset()
         episode_return, episode_length = 0, 0
-        avg_episode_rewards = []
+        epoch_rewards = []
 
         # Iterate over the number of epochs
         for epoch in range(epochs):
@@ -122,17 +123,25 @@ class PPOAgent(Agent):
             for _ in range(self.train_value_iterations):
                 self.train_value_function(observation_buffer, return_buffer)
 
-            avg_episode_rewards.append(sum_return / num_episodes)
+            epoch_rewards.append(sum_return / num_episodes)
+
+            if early_stopping_rounds:
+                if (sum(epoch_rewards[-early_stopping_rounds:]) / early_stopping_rounds) > early_stopping_threshold:
+                    return epoch_rewards
+
             if show_progress:
                 # Plotting doesn't work locally, maybe too many resources used by Keras on CPU?
                 # just use original printing
-                # plot_rewards(avg_episode_rewards)
+                # plot_rewards(epoch_rewards)
                 # Print mean return and length for each epoch
                 print(
                     f" Epoch: {epoch + 1}. Mean Return: {sum_return / num_episodes}. Mean Length: {sum_length / num_episodes}"
                 )
         # return the average episode rewards per epoch
-        return avg_episode_rewards
+        return epoch_rewards
+
+    def eval(self, num_episodes: int) -> list:
+        return super().eval(num_episodes)
 
     def investigate_model_outputs(self, obs: np.ndarray) -> np.ndarray:
         logits = self.actor(obs.reshape(1, -1))
