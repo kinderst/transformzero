@@ -60,12 +60,17 @@ class DQNAgentTests(unittest.TestCase):
 
     def test_train_and_eval_cartpole(self):
         # Tests to see if model can converge on cartpole
+        # From the docs: "Training RL agents can be a noisy process, so restarting training can produce better
+        # results if convergence is not observed."
+        # - https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
+        # Therefore, we ought to test, say, 3 times. The odds of it failing 3 times are
+        # (chance of failing about 20%)^3 = 0.008, ^5 = 0.00032 or 0.032%
         agent = DQNAgent(self.cartpole_env)
         early_stopping_rounds = 50
         early_stopping_threshold = 485.0
         eval_threshold = 450.0
         has_converged = False
-        for i in range(3):
+        for i in range(5):
             epoch_rewards = agent.train(700,
                                         early_stopping_rounds=early_stopping_rounds,
                                         early_stopping_threshold=early_stopping_threshold,
@@ -91,7 +96,7 @@ class DQNAgentTests(unittest.TestCase):
         early_stopping_threshold = 200.0
         eval_threshold = 175.0
         has_converged = False
-        for i in range(3):
+        for i in range(5):
             epoch_rewards = agent.train(800,
                                         early_stopping_rounds=early_stopping_rounds,
                                         early_stopping_threshold=early_stopping_threshold,

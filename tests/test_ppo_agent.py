@@ -67,7 +67,11 @@ class PPOAgentTests(unittest.TestCase):
         early_stopping_threshold = 475.0
         eval_threshold = 450.0
         has_converged = False
-        for i in range(3):
+        # Because training is a noisy process than can fail say 25% of the time at most
+        # in my experience, we do it 5 times, cause 0.25^5=0.001 or 0.1%, so 1/1000 times
+        # it fails, and when that 1/1000 times happen we can investigate and try rerun
+        # and if it continues to fail, then investigate for errors
+        for i in range(5):
             epoch_rewards = agent.train(40,
                                         early_stopping_rounds=early_stopping_rounds,
                                         early_stopping_threshold=early_stopping_threshold,
