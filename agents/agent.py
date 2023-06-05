@@ -32,11 +32,17 @@ class Agent:
 
         raise NotImplementedError("Agents must implement the select_action method")
 
-    def train(self, num_episodes: int) -> None:
+    def train(self, epochs: int, early_stopping_rounds: int, early_stopping_threshold: float, show_progress: bool = False) -> list:
         """Trains the agent
 
         Args:
-            num_episodes (int): Number of episodes to perform training.
+            epochs (int): Number of epochs to perform training.
+            early_stopping_rounds (int): Exits training if amount of last reward rounds above threshold
+            early_stopping_threshold (float): Value which is considered (sometimes nearly) solved
+            show_progress (bool): Whether to display any output for training progress.
+
+        Returns:
+            list: List of average scores per episode for the epochs
 
         """
 

@@ -4,9 +4,6 @@ import math
 from collections import namedtuple
 from itertools import count
 
-import matplotlib
-import matplotlib.pyplot as plt
-
 import torch
 import torch.optim as optim
 import torch.nn as nn
@@ -14,14 +11,13 @@ import torch.nn as nn
 from buffers.dqn_replay_memory import ReplayMemory
 from models.dqn_model import DQN
 from agents.agent import Agent
+from utils.plotting import plot_rewards
 
 
 class DQNAgent(Agent):
-    def __init__(self, env, batch_size=128, gamma=0.99, eps_start=0.9, eps_end=0.05, eps_decay=1000, tau=0.005, lr=1e-4):
+    def __init__(self, env, batch_size=128, gamma=0.99, eps_start=0.9, eps_end=0.05,
+                 eps_decay=1000, tau=0.005, lr=1e-4, replay_mem_size=10000):
         super().__init__(env)
-        # environment
-        # self.env = env
-
         # constants
         self.batch_size = batch_size  # the number of transitions sampled from the replay buffer
         self.gamma = gamma  # the discount factor
@@ -44,23 +40,13 @@ class DQNAgent(Agent):
         # replay memory
         self.Transition = namedtuple('Transition',
                                      ('state', 'action', 'next_state', 'reward'))
-        self.memory = ReplayMemory(10000, self.Transition)
-
-        # counters, recording
-        self.steps_done = 0
-        self.episode_durations = []
-        self.fixed_eps = True  # start with epsilon fixed (to end value), train turns it False
+        self.memory = ReplayMemory(replay_mem_size, self.Transition)
 
     def select_action(self, obs: np.ndarray) -> int:
+        return self.select_action_with_eps(obs, self.eps_end)
+
+    def select_action_with_eps(self, obs: np.ndarray, eps_threshold) -> int:
         sample = random.random()
-        self.steps_done += 1
-        # sometimes we want to have a fixed epsilon (to the final epsilon value)
-        # i.e. during inference, other times we want it to decay with steps (training)
-        if self.fixed_eps:
-            eps_threshold = self.eps_end
-        else:
-            eps_threshold = self.eps_end + (self.eps_start - self.eps_end) * \
-                            math.exp(-1. * self.steps_done / self.eps_decay)
         if sample > eps_threshold:
             obs = torch.tensor(obs, dtype=torch.float32, device=self.device).unsqueeze(0)
             with torch.no_grad():
@@ -71,17 +57,22 @@ class DQNAgent(Agent):
         else:
             return self.env.action_space.sample()
 
-    def train(self, num_episodes: int) -> None:
-        self.fixed_eps = False
-        for i_episode in range(num_episodes):
+    def train(self, epochs: int, early_stopping_rounds: int = -1,
+              early_stopping_threshold: float = 200.0, show_progress: bool = False) -> list:
+        steps_done = 0
+        episode_rewards = []
+        for i_episode in range(epochs):
             # Initialize the environment and get it's state
             total_reward = 0
             observation, info = self.env.reset()
             observation_tensor = torch.tensor(observation, dtype=torch.float32, device=self.device).unsqueeze(0)
             for t in count():
-                action = self.select_action(observation)
+                current_eps = self.eps_end + (self.eps_start - self.eps_end) * \
+                                math.exp(-1. * steps_done / self.eps_decay)
+                action = self.select_action_with_eps(observation, current_eps)
                 action_tensor = torch.tensor([[action]], device=self.device, dtype=torch.long)
                 next_observation, reward, terminated, truncated, _ = self.env.step(action)
+                steps_done += 1
                 total_reward += reward
                 reward_tensor = torch.tensor([reward], device=self.device)
                 done = terminated or truncated
@@ -89,7 +80,9 @@ class DQNAgent(Agent):
                 if terminated:
                     next_observation_tensor = None
                 else:
-                    next_observation_tensor = torch.tensor(next_observation, dtype=torch.float32, device=self.device).unsqueeze(0)
+                    next_observation_tensor = torch.tensor(next_observation,
+                                                           dtype=torch.float32,
+                                                           device=self.device).unsqueeze(0)
 
                 # Store the transition in memory
                 self.memory.push(observation_tensor, action_tensor, next_observation_tensor, reward_tensor)
@@ -110,9 +103,16 @@ class DQNAgent(Agent):
                 self.target_net.load_state_dict(target_net_state_dict)
 
                 if done:
-                    self.episode_durations.append(total_reward)
-                    self.plot_durations()
+                    episode_rewards.append(total_reward)
+                    # if it is positive, we want to stop early (when it reaches some threshold)
+                    if early_stopping_rounds:
+                        if (sum(episode_rewards[-early_stopping_rounds:]) / early_stopping_rounds) > early_stopping_threshold:
+                            return episode_rewards
+
+                    if show_progress:
+                        plot_rewards(episode_rewards)
                     break
+        return episode_rewards
 
     def optimize_model(self):
         if len(self.memory) < self.batch_size:
@@ -167,25 +167,6 @@ class DQNAgent(Agent):
             # second column on max result is index of where max element was
             # found, so we pick action with the larger expected reward.
             return self.policy_net(obs).detach().numpy()[0]
-
-    def plot_durations(self, show_result=False):
-        plt.figure(1)
-        durations_t = torch.tensor(self.episode_durations, dtype=torch.float)
-        if show_result:
-            plt.title('Result')
-        else:
-            plt.clf()
-            plt.title('Training...')
-        plt.xlabel('Episode')
-        plt.ylabel('Duration')
-        plt.plot(durations_t.numpy())
-        # Take 100 episode averages and plot them too
-        if len(durations_t) >= 100:
-            means = durations_t.unfold(0, 100, 1).mean(1).view(-1)
-            means = torch.cat((torch.zeros(99), means))
-            plt.plot(means.numpy())
-
-        plt.pause(0.001)  # pause a bit so that plots are updated
 
     # Save the agent's model or parameters to a file
     def save_model(self, filepath):

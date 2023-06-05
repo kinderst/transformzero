@@ -6,21 +6,22 @@ from tensorflow.keras import layers
 from agents.agent import Agent
 from buffers.ppo_buffer import Buffer
 from models.ppo_model import mlp
+from utils.plotting import plot_rewards
 
 
 class PPOAgent(Agent):
-    def __init__(self, env):
+    def __init__(self, env, steps_per_epoch=4000, gamma=0.99, clip_ratio=0.2, train_policy_iters=80,
+                 train_value_iters=80, lam=0.97, target_kl=0.01, hidden_sizes=(64, 64),
+                 policy_learning_rate=3e-4, value_function_learning_rate=1e-3):
         super().__init__(env)
         # Hyperparameters of the PPO algorithm
-        self.steps_per_epoch = 4000
-        self.epochs = 30
-        self.gamma = 0.99
-        self.clip_ratio = 0.2
-        self.train_policy_iterations = 80
-        self.train_value_iterations = 80
-        self.lam = 0.97
-        self.target_kl = 0.01
-        hidden_sizes = (64, 64)
+        self.steps_per_epoch = steps_per_epoch
+        self.gamma = gamma
+        self.clip_ratio = clip_ratio
+        self.train_policy_iterations = train_policy_iters
+        self.train_value_iterations = train_value_iters
+        self.lam = lam
+        self.target_kl = target_kl
 
         # env info
         observation_dimensions = self.env.observation_space.shape[0]
@@ -39,9 +40,7 @@ class PPOAgent(Agent):
         self.critic = keras.Model(inputs=observation_input, outputs=value)
 
         # Initialize the policy and the value function optimizers
-        policy_learning_rate = 3e-4
         self.policy_optimizer = keras.optimizers.Adam(learning_rate=policy_learning_rate)
-        value_function_learning_rate = 1e-3
         self.value_optimizer = keras.optimizers.Adam(learning_rate=value_function_learning_rate)
 
     # Sample action from actor, basic functionally
@@ -57,10 +56,11 @@ class PPOAgent(Agent):
         action = tf.squeeze(tf.random.categorical(logits, 1), axis=1)
         return logits, action
 
-    def train(self, epochs: int) -> None:
+    def train(self, epochs: int, show_progress: bool = False) -> list:
         # Initialize the observation, episode return and episode length
         observation, info = self.env.reset()
         episode_return, episode_length = 0, 0
+        avg_episode_rewards = []
 
         # Iterate over the number of epochs
         for epoch in range(epochs):
@@ -122,10 +122,17 @@ class PPOAgent(Agent):
             for _ in range(self.train_value_iterations):
                 self.train_value_function(observation_buffer, return_buffer)
 
-            # Print mean return and length for each epoch
-            print(
-                f" Epoch: {epoch + 1}. Mean Return: {sum_return / num_episodes}. Mean Length: {sum_length / num_episodes}"
-            )
+            avg_episode_rewards.append(sum_return / num_episodes)
+            if show_progress:
+                # Plotting doesn't work locally, maybe too many resources used by Keras on CPU?
+                # just use original printing
+                # plot_rewards(avg_episode_rewards)
+                # Print mean return and length for each epoch
+                print(
+                    f" Epoch: {epoch + 1}. Mean Return: {sum_return / num_episodes}. Mean Length: {sum_length / num_episodes}"
+                )
+        # return the average episode rewards per epoch
+        return avg_episode_rewards
 
     def investigate_model_outputs(self, obs: np.ndarray) -> np.ndarray:
         logits = self.actor(obs.reshape(1, -1))
