@@ -55,6 +55,28 @@ class DQNAgentTests(unittest.TestCase):
         self.assertIsInstance(outputs, np.ndarray)
         self.assertEqual(outputs.shape, (agent.env.action_space.n,))
 
+    def test_train_and_eval_cartpole(self):
+        # Tests to see if model can converge on cartpole
+        agent = DQNAgent(self.cartpole_env)
+        early_stopping_rounds = 25
+        early_stopping_threshold = 475.0
+        eval_threshold = 450.0
+        has_converged = False
+        for _ in range(3):
+            epoch_rewards = agent.train(650,
+                                        early_stopping_rounds=early_stopping_rounds,
+                                        early_stopping_threshold=early_stopping_threshold,
+                                        show_progress=False)
+            if (sum(epoch_rewards[-early_stopping_rounds:]) / early_stopping_rounds) > early_stopping_threshold:
+                has_converged = True
+                break
+
+        self.assertTrue(has_converged)
+
+        eval_results = agent.eval(early_stopping_rounds)
+        avg_eval = sum(eval_results) / len(eval_results)
+        self.assertGreaterEqual(avg_eval, eval_threshold)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -60,7 +60,7 @@ class DQNAgent(Agent):
     def train(self, epochs: int, early_stopping_rounds: int = -1,
               early_stopping_threshold: float = 200.0, show_progress: bool = False) -> list:
         steps_done = 0
-        episode_rewards = []
+        epoch_rewards = []
         for i_episode in range(epochs):
             # Initialize the environment and get it's state
             total_reward = 0
@@ -103,16 +103,16 @@ class DQNAgent(Agent):
                 self.target_net.load_state_dict(target_net_state_dict)
 
                 if done:
-                    episode_rewards.append(total_reward)
+                    epoch_rewards.append(total_reward)
                     # if it is positive, we want to stop early (when it reaches some threshold)
                     if early_stopping_rounds:
-                        if (sum(episode_rewards[-early_stopping_rounds:]) / early_stopping_rounds) > early_stopping_threshold:
-                            return episode_rewards
+                        if (sum(epoch_rewards[-early_stopping_rounds:]) / early_stopping_rounds) > early_stopping_threshold:
+                            return epoch_rewards
 
                     if show_progress:
-                        plot_rewards(episode_rewards)
+                        plot_rewards(epoch_rewards)
                     break
-        return episode_rewards
+        return epoch_rewards
 
     def optimize_model(self):
         if len(self.memory) < self.batch_size:
