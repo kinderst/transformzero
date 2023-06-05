@@ -28,10 +28,10 @@ class PPOAgentTests(unittest.TestCase):
         num_tests = 10
         for i in range(num_tests):
             obs = np.arange(i, n_observations+i) / num_tests
-            action, logits = agent.select_action_with_logits(obs.reshape(1, -1))
+            logits, action = agent.select_action_with_logits(obs.reshape(1, -1))
             self.assertIsInstance(logits, tf.Tensor)
             self.assertIsInstance(action, tf.Tensor)
-            self.assertIsInstance(action[0].numpy()[0], int)
+            self.assertIsInstance(action[0].numpy()[0], np.int64)
             self.assertGreaterEqual(action[0].numpy()[0], 0)
             self.assertLess(action[0].numpy()[0], agent.env.action_space.n)
 

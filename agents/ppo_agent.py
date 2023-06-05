@@ -47,7 +47,7 @@ class PPOAgent(Agent):
     def select_action(self, obs: np.ndarray) -> int:
         logits = self.actor(obs.reshape(1, -1))
         action = tf.squeeze(tf.random.categorical(logits, 1), axis=1)
-        return action[0].numpy()
+        return int(action[0].numpy())
 
     # Sample action from actor, for efficient use (obs must be shaped 1,-1 going in)
     @tf.function
