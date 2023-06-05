@@ -48,6 +48,30 @@ class Agent:
 
         raise NotImplementedError("Agents must implement the train method")
 
+    def eval(self, num_episodes: int) -> list:
+        """Trains the agent
+
+        Args:
+            num_episodes (int): Number of episodes to perform evaluation.
+
+        Returns:
+            list: List of scores for each episode
+
+        """
+
+        all_episode_rewards = []
+        for _ in range(num_episodes):
+            done = False
+            observation, info = self.env.reset()
+            episode_reward = 0
+            while not done:
+                action = self.select_action(observation)
+                observation, reward, terminated, truncated, _ = self.env.step(action)
+                episode_reward += reward
+                done = terminated or truncated
+            all_episode_rewards.append(episode_reward)
+        return all_episode_rewards
+
     def investigate_model_outputs(self, obs: np.ndarray) -> np.ndarray:
         """Trains the agent
 

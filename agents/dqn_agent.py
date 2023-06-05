@@ -160,6 +160,9 @@ class DQNAgent(Agent):
         torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 100)
         self.optimizer.step()
 
+    def eval(self, num_episodes: int) -> list:
+        return super().eval(num_episodes)
+
     def investigate_model_outputs(self, obs: np.ndarray) -> np.ndarray:
         obs = torch.tensor(obs, dtype=torch.float32, device=self.device).unsqueeze(0)
         with torch.no_grad():
