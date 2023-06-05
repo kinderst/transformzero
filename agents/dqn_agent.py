@@ -45,7 +45,7 @@ class DQNAgent(Agent):
     def select_action(self, obs: np.ndarray) -> int:
         return int(self.select_action_with_eps(obs, self.eps_end))
 
-    def select_action_with_eps(self, obs: np.ndarray, eps_threshold) -> np.int64:
+    def select_action_with_eps(self, obs: np.ndarray, eps_threshold) -> int:
         sample = random.random()
         if sample > eps_threshold:
             obs = torch.tensor(obs, dtype=torch.float32, device=self.device).unsqueeze(0)
@@ -55,7 +55,8 @@ class DQNAgent(Agent):
                 # found, so we pick action with the larger expected reward.
                 return self.policy_net(obs).max(1)[1].view(1, 1).item()
         else:
-            return self.env.action_space.sample()
+            # cast to int because sample() returns np.int64, for consistency
+            return int(self.env.action_space.sample())
 
     def train(self, epochs: int, early_stopping_rounds: int = -1,
               early_stopping_threshold: float = 200.0, show_progress: bool = False) -> list:

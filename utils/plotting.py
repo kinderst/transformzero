@@ -12,7 +12,7 @@ def plot_rewards(epoch_rewards: list, show_avg_of_last: int = 100, show_result: 
         plt.clf()
         plt.title('Training...')
     plt.xlabel('Episode')
-    plt.ylabel('Duration')
+    plt.ylabel('Rewards')
     plt.plot(durations_t.numpy())
     # Take 100 (show avg last) episode averages and plot them too
     if len(durations_t) >= 100:

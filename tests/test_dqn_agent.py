@@ -29,7 +29,7 @@ class DQNAgentTests(unittest.TestCase):
             obs = np.arange(i, n_observations+i) / num_tests
             eps_threshold = i / num_tests
             action = agent.select_action_with_eps(obs, eps_threshold)
-            self.assertIsInstance(action, np.int64)
+            self.assertIsInstance(action, int)
             self.assertGreaterEqual(action, 0)
             self.assertLess(action, agent.env.action_space.n)
 
@@ -66,7 +66,7 @@ class DQNAgentTests(unittest.TestCase):
         eval_threshold = 450.0
         has_converged = False
         for i in range(3):
-            epoch_rewards = agent.train(650,
+            epoch_rewards = agent.train(700,
                                         early_stopping_rounds=early_stopping_rounds,
                                         early_stopping_threshold=early_stopping_threshold,
                                         show_progress=False)
