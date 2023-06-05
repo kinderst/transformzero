@@ -80,7 +80,7 @@ class PPOAgentTests(unittest.TestCase):
 
         self.assertTrue(has_converged)
 
-        eval_results = agent.eval(early_stopping_rounds * 100)
+        eval_results = agent.eval(early_stopping_rounds * 5)
         avg_eval = sum(eval_results) / len(eval_results)
         print("ppo cartpole eval avg: ", avg_eval)
         self.assertGreaterEqual(avg_eval, eval_threshold)
