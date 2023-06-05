@@ -31,9 +31,9 @@ class PPOAgentTests(unittest.TestCase):
             logits, action = agent.select_action_with_logits(obs.reshape(1, -1))
             self.assertIsInstance(logits, tf.Tensor)
             self.assertIsInstance(action, tf.Tensor)
-            self.assertIsInstance(action[0].numpy()[0], np.int64)
-            self.assertGreaterEqual(action[0].numpy()[0], 0)
-            self.assertLess(action[0].numpy()[0], agent.env.action_space.n)
+            self.assertIsInstance(action[0].numpy(), np.int64)
+            self.assertGreaterEqual(action[0].numpy(), 0)
+            self.assertLess(action[0].numpy(), agent.env.action_space.n)
 
     def test_train(self):
         agent = PPOAgent(self.cartpole_env)
@@ -63,12 +63,12 @@ class PPOAgentTests(unittest.TestCase):
     def test_train_and_eval_cartpole(self):
         # Tests to see if model can converge on cartpole
         agent = PPOAgent(self.cartpole_env)
-        early_stopping_rounds = 3
+        early_stopping_rounds = 7
         early_stopping_threshold = 475.0
         eval_threshold = 450.0
         has_converged = False
         for i in range(3):
-            epoch_rewards = agent.train(30,
+            epoch_rewards = agent.train(40,
                                         early_stopping_rounds=early_stopping_rounds,
                                         early_stopping_threshold=early_stopping_threshold,
                                         show_progress=False)
@@ -80,7 +80,7 @@ class PPOAgentTests(unittest.TestCase):
 
         self.assertTrue(has_converged)
 
-        eval_results = agent.eval(early_stopping_rounds)
+        eval_results = agent.eval(early_stopping_rounds * 100)
         avg_eval = sum(eval_results) / len(eval_results)
         print("ppo cartpole eval avg: ", avg_eval)
         self.assertGreaterEqual(avg_eval, eval_threshold)

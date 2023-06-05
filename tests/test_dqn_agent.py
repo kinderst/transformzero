@@ -29,7 +29,7 @@ class DQNAgentTests(unittest.TestCase):
             obs = np.arange(i, n_observations+i) / num_tests
             eps_threshold = i / num_tests
             action = agent.select_action_with_eps(obs, eps_threshold)
-            self.assertIsInstance(action, int)
+            self.assertIsInstance(action, np.int64)
             self.assertGreaterEqual(action, 0)
             self.assertLess(action, agent.env.action_space.n)
 

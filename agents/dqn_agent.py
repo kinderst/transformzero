@@ -45,7 +45,7 @@ class DQNAgent(Agent):
     def select_action(self, obs: np.ndarray) -> int:
         return int(self.select_action_with_eps(obs, self.eps_end))
 
-    def select_action_with_eps(self, obs: np.ndarray, eps_threshold) -> int:
+    def select_action_with_eps(self, obs: np.ndarray, eps_threshold) -> np.int64:
         sample = random.random()
         if sample > eps_threshold:
             obs = torch.tensor(obs, dtype=torch.float32, device=self.device).unsqueeze(0)
@@ -53,7 +53,7 @@ class DQNAgent(Agent):
                 # t.max(1) will return the largest column value of each row.
                 # second column on max result is index of where max element was
                 # found, so we pick action with the larger expected reward.
-                return int(self.policy_net(obs).max(1)[1].view(1, 1).item())
+                return self.policy_net(obs).max(1)[1].view(1, 1).item()
         else:
             return self.env.action_space.sample()
 
