@@ -13,24 +13,27 @@ class PPOAgentTests(unittest.TestCase):
         agent = PPOAgent(self.cartpole_env)
         observation, _ = self.cartpole_env.reset()
         n_observations = len(observation)
-        obs = np.arange(1, n_observations+1)
-        action = agent.select_action(obs)
-        self.assertIsInstance(action, int)
-        self.assertGreaterEqual(action, 0)
-        self.assertLess(action, agent.env.action_space.n)
+        num_tests = 10
+        for i in range(num_tests):
+            obs = np.arange(i, n_observations+i) / num_tests
+            action = agent.select_action(obs)
+            self.assertIsInstance(action, int)
+            self.assertGreaterEqual(action, 0)
+            self.assertLess(action, agent.env.action_space.n)
 
     def test_select_action_with_logits(self):
         agent = PPOAgent(self.cartpole_env)
         observation, _ = self.cartpole_env.reset()
         n_observations = len(observation)
-        obs = np.arange(1, n_observations+1)
-        eps_threshold = 0.1
-        action, logits = agent.select_action_with_logits(obs)
-        self.assertIsInstance(action, int)
-        self.assertGreaterEqual(action, 0)
-        self.assertLess(action, agent.env.action_space.n)
-        self.assertIsInstance(logits, tf.Tensor)
-        self.assertIsInstance(action, tf.Tensor)
+        num_tests = 10
+        for i in range(num_tests):
+            obs = np.arange(i, n_observations+i) / num_tests
+            action, logits = agent.select_action_with_logits(obs.reshape(1, -1))
+            self.assertIsInstance(logits, tf.Tensor)
+            self.assertIsInstance(action, tf.Tensor)
+            self.assertIsInstance(action[0].numpy()[0], int)
+            self.assertGreaterEqual(action[0].numpy()[0], 0)
+            self.assertLess(action[0].numpy()[0], agent.env.action_space.n)
 
     def test_train(self):
         agent = PPOAgent(self.cartpole_env)
