@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import torch
 from itertools import count
 
+from agents.random_agent import RandomAgent
 from agents.dqn_agent import DQNAgent
 from agents.ppo_agent import PPOAgent
 from environments.grid_world_env import GridWorldEnv
@@ -22,7 +23,9 @@ def eval_step_episode(env_name, agent_name, test_episodes, weights_path):
         return
 
     # Initialize agent
-    if agent_name == "dqn":
+    if agent_name == "rand":
+        agent = RandomAgent(env)
+    elif agent_name == "dqn":
         agent = DQNAgent(env)
     elif agent_name == "ppo":
         agent = PPOAgent(env)
