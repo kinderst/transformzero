@@ -6,7 +6,6 @@ import gymnasium as gym
 
 class DQNAgentTests(unittest.TestCase):
     def setUp(self):
-        # Initialize any necessary objects or variables for the tests
         self.cartpole_env = gym.make("CartPole-v1")
 
     def test_select_action(self):
@@ -60,15 +59,15 @@ class DQNAgentTests(unittest.TestCase):
         agent = DQNAgent(self.cartpole_env)
         early_stopping_rounds = 50
         early_stopping_threshold = 485.0
-        eval_threshold = 400.0
+        eval_threshold = 450.0
         has_converged = False
-        for _ in range(3):
+        for i in range(3):
             epoch_rewards = agent.train(650,
                                         early_stopping_rounds=early_stopping_rounds,
                                         early_stopping_threshold=early_stopping_threshold,
                                         show_progress=False)
             avg_train = sum(epoch_rewards[-early_stopping_rounds:]) / early_stopping_rounds
-            print(avg_train)
+            print(f"dqn cartpole training average: {avg_train} for attempt: {i}")
             if avg_train > early_stopping_threshold:
                 has_converged = True
                 break
@@ -77,6 +76,33 @@ class DQNAgentTests(unittest.TestCase):
 
         eval_results = agent.eval(early_stopping_rounds)
         avg_eval = sum(eval_results) / len(eval_results)
+        print("dqn cartpole eval avg: ", avg_eval)
+        self.assertGreaterEqual(avg_eval, eval_threshold)
+
+    def test_train_and_eval_lunar(self):
+        # Tests to see if model can converge on lunar
+        lunar_env = gym.make("LunarLander-v2")
+        agent = DQNAgent(lunar_env)
+        early_stopping_rounds = 50
+        early_stopping_threshold = 200.0
+        eval_threshold = 175.0
+        has_converged = False
+        for i in range(3):
+            epoch_rewards = agent.train(800,
+                                        early_stopping_rounds=early_stopping_rounds,
+                                        early_stopping_threshold=early_stopping_threshold,
+                                        show_progress=False)
+            avg_train = sum(epoch_rewards[-early_stopping_rounds:]) / early_stopping_rounds
+            print(f"dqn lunar training average: {avg_train} for attempt: {i}")
+            if avg_train > early_stopping_threshold:
+                has_converged = True
+                break
+
+        self.assertTrue(has_converged)
+
+        eval_results = agent.eval(early_stopping_rounds)
+        avg_eval = sum(eval_results) / len(eval_results)
+        print("dqn lunar eval avg: ", avg_eval)
         self.assertGreaterEqual(avg_eval, eval_threshold)
 
 
