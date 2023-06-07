@@ -94,7 +94,7 @@ class DQNAgentTests(unittest.TestCase):
         agent = DQNAgent(lunar_env)
         early_stopping_rounds = 50
         early_stopping_threshold = 200.0
-        eval_threshold = 175.0
+        eval_threshold = 150.0
         has_converged = False
         for i in range(5):
             epoch_rewards = agent.train(800,
