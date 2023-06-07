@@ -1,5 +1,7 @@
 # TransformZero
 
+By Scott Kinder
+
 ## Deep Reinforcement Learning Continuous Integration
 
 A major component of this package is the continuous integration via GitHub actions which allow for
@@ -50,11 +52,11 @@ Once you have your DQN, Transition, Reward, and Terminated models, the algorithm
 For training, Q-Value targets are found the same as always, and the rest of the models continue to add data to the buffer
 to improve the transition/reward/terminated models, which should help improve action search as training progresses
 
-This idea comes in part from the original Deep Q Learning paper, where the authors stacked 
-the previous 4 frames (CHECK) to understand what direction things were moving. A time series 
-transformer would also have access to that information, as well as how past transitions
-may influence future ones, even though we expect the transformer to really pay the most
-attention to the last few time steps.
+Aside from obviously being inspired by MuZero and tree-based search, this idea also comes in part from 
+the [original Deep Q Learning paper](https://arxiv.org/abs/1312.5602), where the authors stacked the previous 
+4 frames to understand what direction things were moving. A time series transformer would also have 
+access to that information, as well as how past transitions may influence future ones, even though we expect 
+the transformer to really pay the most attention to the last few time steps.
 
 Additionally, it seems like a good idea because for other models we may want to have such as one for 
 a reward can be fine-tuned from the transition model, since the input is the same we are just trying to 

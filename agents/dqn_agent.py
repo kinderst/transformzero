@@ -15,6 +15,10 @@ from utils.plotting import plot_rewards
 
 
 class DQNAgent(Agent):
+    """
+    Source for most code before it was rearranged/changed, and details:
+    https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
+    """
     def __init__(self, env, batch_size=128, gamma=0.99, eps_start=0.9, eps_end=0.05,
                  eps_decay=1000, tau=0.005, lr=1e-4, replay_mem_size=10000):
         super().__init__(env)

@@ -6,6 +6,12 @@ from gymnasium import spaces
 
 
 class GridWorldEnv(gym.Env):
+    """
+    Source for most code before it was rearranged/changed, and details:
+    https://www.gymlibrary.dev/content/environment_creation/
+
+    Obstacles and other things added.
+    """
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
 
     def __init__(self, render_mode=None, size=5, obs_type="flat"):
