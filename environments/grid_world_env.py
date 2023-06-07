@@ -8,22 +8,28 @@ from gymnasium import spaces
 class GridWorldEnv(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
 
-    def __init__(self, render_mode=None, size=5):
+    def __init__(self, render_mode=None, size=5, obs_type="flat"):
         self._target_location = None
         self._agent_location = None
         self._obstacles = []
         self.size = size  # The size of the square grid
         self.window_size = 512  # The size of the PyGame window
+        self.obs_type = obs_type
 
         # Observations are dictionaries with the agent's and the target's location.
         # Each location is encoded as an element of {0, ..., `size`}^2, i.e. MultiDiscrete([size, size]).
-        self.observation_space = spaces.Dict(
-            {
-                "agent": spaces.Box(0, size - 1, shape=(2,), dtype=int),
-                "target": spaces.Box(0, size - 1, shape=(2,), dtype=int),
-                "obstacles": spaces.MultiBinary((size, size)),
-            }
-        )
+        if obs_type == "flat":
+            self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(size*size,), dtype=np.float32)
+        elif obs_type == "img":
+            self.observation_space = spaces.MultiBinary([size, size, 3])
+        else:
+            self.observation_space = spaces.Dict(
+                {
+                    "agent": spaces.Box(0, size - 1, shape=(2,), dtype=int),
+                    "target": spaces.Box(0, size - 1, shape=(2,), dtype=int),
+                    "obstacles": spaces.MultiBinary((size, size)),
+                }
+            )
 
         # We have 4 actions, corresponding to "right", "up", "left", "down"
         self.action_space = spaces.Discrete(4)
@@ -54,11 +60,37 @@ class GridWorldEnv(gym.Env):
         self.clock = None
 
     def _get_obs(self):
-        return {
-            "agent": self._agent_location,
-            "target": self._target_location,
-            "obstacles": self._get_obstacle_matrix(),
-        }
+        if self.obs_type == "flat":
+            return self._get_flat_obs()
+        elif self.obs_type == "img":
+            return self._get_img_obs()
+        else:
+            return {
+                "agent": self._agent_location,
+                "target": self._target_location,
+                "obstacles": self._get_obstacle_matrix(),
+            }
+
+    def _get_flat_obs(self):
+        all_plane = self._get_obstacle_matrix()
+        # agent is arbitrarily denoted as -0.5 (closer to 0, closer to target?)
+        all_plane[self._agent_location[1]][self._agent_location[0]] = -0.5
+        # target is arbitrarily denoted as -1.0 (opposite of target?)
+        all_plane[self._target_location[1]][self._target_location[0]] = -1
+        # flatten to 1D
+        return all_plane.flatten()
+
+    def _get_img_obs(self):
+        # plane of 0's, 1 where agent is
+        agent_plane = np.zeros((self.size, self.size))
+        agent_plane[self._agent_location[1]][self._agent_location[0]] = 1
+        # plane of 0's, 1 where target is
+        target_plane = np.zeros((self.size, self.size))
+        target_plane[self._target_location[1]][self._target_location[0]] = 1
+        # plane of 0's, 1's where obstacle(s) are
+        obstacle_plane = self._get_obstacle_matrix()
+        # Stack to 3D obs
+        return np.stack((agent_plane, target_plane, obstacle_plane), axis=2)
 
     def _get_info(self):
         return {
@@ -98,7 +130,7 @@ class GridWorldEnv(gym.Env):
 
         # add random number of obstacles between 0 and size-1 (if it was size, could potentially block path)
         # though even with 3, it could form a barrier around goal in corner, or 4 could barricade goal
-        # around side..
+        # around side...
         self.add_random_obstacles(self.size - 1)
 
         observation = self._get_obs()
@@ -217,4 +249,3 @@ class GridWorldEnv(gym.Env):
         if self.window is not None:
             pygame.display.quit()
             pygame.quit()
-
