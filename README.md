@@ -2,11 +2,32 @@
 
 ## Deep Reinforcement Learning Continuous Integration
 
-A major component of this major is the continuous integration via GitHub actions which allow for
-us to confirm algorithm convergence in known environments. This is important to confirm that the code
-for training models in new environments does work in known environments, along with other tests
-to ensure that it should run properly in new environments (given proper setup for the new environment).
-It also demonstrates a proof of concept for Deep RL Algorithms and their models for MLOps.
+A major component of this package is the continuous integration via GitHub actions which allow for
+us to assure with a degree of confidence algorithm convergence in known environments. This is important to 
+confirm that the code for training models in new environments is the same code that worked in known environments, 
+along with other tests to ensure that it should run properly in new environments (given proper setup for the 
+new environment). It also demonstrates a proof of concept for Deep RL Algorithms and their models for MLOps.
+
+For example, if we look at the Actions tab, and select a workflow
+
+![Continuous Integration Workflow](images/ci-body.PNG)
+
+and inspect the tests
+
+![Continuous Integration Workflow](images/ci-output.PNG)
+
+It shows that indeed the code for the agents does work for the environments that there are tests written for
+
+Additionally, if we look at an example test, say DQN on LunarLander-v2
+
+![Continuous Integration Workflow](images/ci-code.PNG)
+
+We see that both training is given 5 chances to converge (you can choose your statistical tolerance versus runtime)
+and must have a decent eval score, again below the threshold due to statistical chance for failure (but not enough to
+indicate that we should investigate necessarily). It depends on the environment and the tolerance for error,
+and does not guarantee that the code is perfect nor optimized, only that it can converge on the environment.
+However, this approach allows us to be more confident that the agents we are shipping we, and can provide proof
+for users when they use this package that the models will converge (at least once), and can prove it with the tests
 
 ## The Algorithm
 
