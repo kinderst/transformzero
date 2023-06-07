@@ -10,6 +10,11 @@ confirm that the code for training models in new environments is the same code t
 along with other tests to ensure that it should run properly in new environments (given proper setup for the 
 new environment). It also demonstrates a proof of concept for Deep RL Algorithms and their models for MLOps.
 
+To be specific, looking at the Google MLOps Cloud Architecture page for MLOps level 2 (CI/CD pipeline automation)
+this proof of concept would cover the "CI: Build, test & package pipeline components" part, shown here:
+
+![Continuous Integration Workflow](images/ci-pipeline-google.PNG)
+
 For example, if we look at the Actions tab, and select a workflow:
 
 ![Continuous Integration Workflow](images/ci-body.PNG)
