@@ -4,24 +4,24 @@ By Scott Kinder
 
 Usage:
 
-> git clone https://github.com/kinderst/transformzero.git
-> cd transformzero
+`git clone https://github.com/kinderst/transformzero.git`
+`cd transformzero`
 
 To train:
 
-> python -m scripts.trainer --env <env> --agent <agent> --epochs <epochs>
+`python -m scripts.trainer --env <env> --agent <agent> --epochs <epochs>`
 
 To evaluate individual steps:
 
-> python -m scripts.evaler_step --env <env> --agent <agent> --weights <path>
+`python -m scripts.evaler_step --env <env> --agent <agent> --weights <path>`
 
 To evaluate episode rewards:
 
-> python -m scripts.evaler_episodes --env <env> --agent <agent> --weights <path> --episodes <episodes>
+`python -m scripts.evaler_episodes --env <env> --agent <agent> --weights <path> --episodes <episodes>`
 
 Tests are run as:
 
-> python -m unittest discover -s tests -p "test_*.py"
+`python -m unittest discover -s tests -p "test_*.py`
 
 To estimate how long it will take to run, look at how long the tests took to run in Actions tab
 
