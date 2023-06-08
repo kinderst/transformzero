@@ -10,6 +10,8 @@ from utils.plotting import plot_rewards
 
 
 def train_agent(env_name, agent_name, num_epochs):
+    dqn_lr = 1e-4
+
     # Initialize environment
     if env_name == "cartpole":
         env = gym.make("CartPole-v1")
@@ -17,16 +19,17 @@ def train_agent(env_name, agent_name, num_epochs):
     elif env_name == "lunar":
         env = gym.make("LunarLander-v2")
         early_stopping_threshold = 200.0
-    elif env_name == "grid":
-        env = gym.make(GridWorldEnv)
-        early_stopping_threshold = 7.0
+    elif env_name == "gridnone":
+        env = GridWorldEnv(num_obstacles=0)
+        early_stopping_threshold = 8.0
+        dqn_lr = 1e-2
     else:
         print(f"No envs with name: {str(env_name)} found, exiting...")
         return
 
     # Initialize agent
     if agent_name == "dqn":
-        agent = DQNAgent(env)
+        agent = DQNAgent(env, lr=dqn_lr)
         early_stopping_rounds = 25
     elif agent_name == "ppo":
         agent = PPOAgent(env)

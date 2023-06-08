@@ -110,13 +110,16 @@ class DQNAgent(Agent):
                 if done:
                     epoch_rewards.append(total_reward)
                     # if it is positive, we want to stop early (when it reaches some threshold)
-                    if early_stopping_rounds:
+                    if early_stopping_rounds and len(epoch_rewards) >= early_stopping_rounds:
                         if (sum(epoch_rewards[-early_stopping_rounds:]) / early_stopping_rounds) > early_stopping_threshold:
                             return epoch_rewards
 
                     if show_progress:
                         plot_rewards(epoch_rewards)
                     break
+            # for testing only!
+            # if i_episode % 100 == 0:
+            #     print(current_eps)
         return epoch_rewards
 
     def optimize_model(self):

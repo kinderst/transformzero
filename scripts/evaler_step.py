@@ -17,7 +17,7 @@ def eval_step_episode(env_name, agent_name, weights_path):
     elif env_name == "lunar":
         env = gym.make("LunarLander-v2", render_mode="human")
     elif env_name == "grid":
-        env = GridWorldEnv(render_mode="human")
+        env = GridWorldEnv(render_mode="human", num_obstacles=0)
     else:
         print('err bad env name')
         return

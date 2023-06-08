@@ -128,7 +128,7 @@ class PPOAgent(Agent):
 
             epoch_rewards.append(sum_return / num_episodes)
 
-            if early_stopping_rounds:
+            if early_stopping_rounds and len(epoch_rewards) >= early_stopping_rounds:
                 if (sum(epoch_rewards[-early_stopping_rounds:]) / early_stopping_rounds) > early_stopping_threshold:
                     return epoch_rewards
 

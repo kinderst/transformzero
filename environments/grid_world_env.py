@@ -14,13 +14,16 @@ class GridWorldEnv(gym.Env):
     """
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
 
-    def __init__(self, render_mode=None, size=5, obs_type="flat"):
+    def __init__(self, render_mode=None, size=5, obs_type="flat", max_episode_length=20, num_obstacles=0):
+        self._current_step = None
         self._target_location = None
         self._agent_location = None
         self._obstacles = []
+        self.num_obstacles = num_obstacles
         self.size = size  # The size of the square grid
         self.window_size = 512  # The size of the PyGame window
         self.obs_type = obs_type
+        self.max_episode_length = max_episode_length
 
         # Observations are dictionaries with the agent's and the target's location.
         # Each location is encoded as an element of {0, ..., `size`}^2, i.e. MultiDiscrete([size, size]).
@@ -78,13 +81,14 @@ class GridWorldEnv(gym.Env):
             }
 
     def _get_flat_obs(self):
-        all_plane = self._get_obstacle_matrix()
-        # agent is arbitrarily denoted as -0.5 (closer to 0, closer to target?)
-        all_plane[self._agent_location[1]][self._agent_location[0]] = -0.5
-        # target is arbitrarily denoted as -1.0 (opposite of target?)
-        all_plane[self._target_location[1]][self._target_location[0]] = -1
-        # flatten to 1D
-        return all_plane.flatten()
+        # all_plane = self._get_obstacle_matrix()
+        # # agent is arbitrarily denoted as -0.5 (closer to 0, closer to target?)
+        # all_plane[self._agent_location[1]][self._agent_location[0]] = -0.5
+        # # target is arbitrarily denoted as -1.0 (opposite of target?)
+        # all_plane[self._target_location[1]][self._target_location[0]] = -1
+        # # flatten to 1D
+        # return all_plane.flatten()
+        return self._get_img_obs().reshape(-1)
 
     def _get_img_obs(self):
         # plane of 0's, 1 where agent is
@@ -137,10 +141,12 @@ class GridWorldEnv(gym.Env):
         # add random number of obstacles between 0 and size-1 (if it was size, could potentially block path)
         # though even with 3, it could form a barrier around goal in corner, or 4 could barricade goal
         # around side...
-        self.add_random_obstacles(self.size - 1)
+        self.add_random_obstacles(self.num_obstacles)
 
         observation = self._get_obs()
         info = self._get_info()
+        
+        self._current_step = 0
 
         if self.render_mode == "human":
             self._render_frame()
@@ -163,9 +169,15 @@ class GridWorldEnv(gym.Env):
         # Update the agent's location
         self._agent_location = new_location
 
-        # An episode is done iff the agent has reached the target
+        # An episode is done if the agent has reached the target, or 50 steps
         terminated = np.array_equal(self._agent_location, self._target_location)
-        reward = 1 if terminated else 0  # Binary sparse rewards
+        # if the agent ends, they get the reward, -1 for stepping
+        reward = 10 if terminated else -1
+        # but also terminate if agent reached max num steps, just don't want to give reward
+        if self._current_step >= self.max_episode_length:
+            terminated = True
+
+        self._current_step += 1
 
         if self.render_mode == "human":
             self._render_frame()

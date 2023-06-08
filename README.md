@@ -65,7 +65,7 @@ Tree-based search, similar to MuZero with time series transformer as transition 
 
 The general idea for the algorithm is as follows:
 
-1. Train a DQN exactly the same way it is done now
+1. Train a initial policy model exactly the same way it is done now (i.e.DQN, PPO)
 2. Collect transition samples from the training process
    1. including initial obs/state, action, reward, terminated, next obs/state
 3. Fit a time series transformer, taking the initial obs/state and action, and outputting the next obs/state time step
@@ -75,7 +75,10 @@ The general idea for the algorithm is as follows:
 Once you have your DQN, Transition, Reward, and Terminated models, the algorithm for action selection goes as follows:
 
 1. Initialize n threads, desired depth for threads, etc.
-2. The Q-Values determine the proportion of threads to send each action branch, with dirichlet noise for exploration
+2. The Q-Values/PPO logits/policy model determine the proportion of threads to send each action branch, 
+   1. with dirichlet noise for exploration
+   2. PPO logits may be softmaxed, Q-Values may be shifted positive then divided by sum for probabilities, etc.
+   3. Idea is to have initial best guess model guide our search during inference
 3. The rewards are accumulated for each trajectory (from Reward model)
    1. also being multiplied by how likely the states before were terminal (from Terminal model)
 4. Action is based on trajectory that had best reward

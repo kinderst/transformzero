@@ -41,6 +41,9 @@ def eval_step_episode(env_name, agent_name, test_episodes, weights_path):
     print("Test episode reward results:")
     print(reward_results)
 
+    avg_reward = sum(reward_results) / len(reward_results)
+    print("avg reward: ", avg_reward)
+
 
 if __name__ == "__main__":
     # Parse command-line arguments
