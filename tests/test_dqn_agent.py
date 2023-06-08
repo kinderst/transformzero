@@ -122,10 +122,10 @@ class DQNAgentTests(unittest.TestCase):
         agent = DQNAgent(grid_env, lr=1e-2)
         early_stopping_rounds = 50
         early_stopping_threshold = 8.0
-        eval_threshold = 6.0
+        eval_threshold = 7.0
         has_converged = False
         for i in range(5):
-            epoch_rewards = agent.train(1500,
+            epoch_rewards = agent.train(2000,
                                         early_stopping_rounds=early_stopping_rounds,
                                         early_stopping_threshold=early_stopping_threshold,
                                         show_progress=False)

@@ -14,7 +14,7 @@ class GridWorldEnvTest(unittest.TestCase):
 
     def test_reset(self):
         obs, info = self.env.reset()
-        self.assertEqual(obs.shape, (self.env.size * self.env.size,))
+        self.assertEqual(obs.shape, (self.env.size * self.env.size * 3,))
         self.assertIsInstance(info, dict)
 
     def test_step(self):
@@ -22,7 +22,7 @@ class GridWorldEnvTest(unittest.TestCase):
         _, _ = self.env.reset()
         action = self.env.action_space.sample()
         next_obs, reward, terminated, truncated, next_info = self.env.step(action)
-        self.assertEqual(next_obs.shape, (self.env.size * self.env.size,))
+        self.assertEqual(next_obs.shape, (self.env.size * self.env.size * 3,))
         self.assertIsInstance(reward, int)
         self.assertIsInstance(terminated, bool)
         self.assertIsInstance(next_info, dict)
@@ -48,10 +48,10 @@ class GridWorldEnvTest(unittest.TestCase):
 
                 if obs_type == "flat":
                     self.assertIsInstance(obs, np.ndarray)
-                    self.assertEqual(obs.shape, (self.env.size * self.env.size,))
+                    self.assertEqual(obs.shape, (self.env.size * self.env.size * 3,))
 
                     self.assertIsInstance(next_obs, np.ndarray)
-                    self.assertEqual(next_obs.shape, (self.env.size * self.env.size,))
+                    self.assertEqual(next_obs.shape, (self.env.size * self.env.size * 3,))
 
                 elif obs_type == "img":
                     self.assertIsInstance(obs, np.ndarray)
