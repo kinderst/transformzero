@@ -17,7 +17,7 @@ def eval_step_episode(env_name, agent_name, weights_path):
     elif env_name == "lunar":
         env = gym.make("LunarLander-v2", render_mode="human")
     elif env_name == "grid":
-        env = GridWorldEnv(render_mode="human", num_obstacles=0)
+        env = GridWorldEnv(render_mode="human", num_obstacles=0, obs_type="img")
     else:
         print('err bad env name')
         return
@@ -26,7 +26,7 @@ def eval_step_episode(env_name, agent_name, weights_path):
     if agent_name == "rand":
         agent = RandomAgent(env)
     elif agent_name == "dqn":
-        agent = DQNAgent(env)
+        agent = DQNAgent(env, model_type="resnet")
     elif agent_name == "ppo":
         agent = PPOAgent(env)
     else:

@@ -20,7 +20,7 @@ def train_agent(env_name, agent_name, num_epochs):
         env = gym.make("LunarLander-v2")
         early_stopping_threshold = 200.0
     elif env_name == "gridnone":
-        env = GridWorldEnv(num_obstacles=0)
+        env = GridWorldEnv(num_obstacles=0, obs_type="img")
         early_stopping_threshold = 8.0
         dqn_lr = 1e-2
     else:
@@ -29,7 +29,7 @@ def train_agent(env_name, agent_name, num_epochs):
 
     # Initialize agent
     if agent_name == "dqn":
-        agent = DQNAgent(env, lr=dqn_lr)
+        agent = DQNAgent(env, lr=dqn_lr, model_type="resnet")
         early_stopping_rounds = 25
     elif agent_name == "ppo":
         agent = PPOAgent(env)

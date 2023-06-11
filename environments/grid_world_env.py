@@ -100,7 +100,7 @@ class GridWorldEnv(gym.Env):
         # plane of 0's, 1's where obstacle(s) are
         obstacle_plane = self._get_obstacle_matrix()
         # Stack to 3D obs
-        return np.stack((agent_plane, target_plane, obstacle_plane), axis=2)
+        return np.stack((agent_plane, target_plane, obstacle_plane))
 
     def _get_info(self):
         return {

@@ -10,6 +10,7 @@ import torch.nn as nn
 
 from buffers.dqn_replay_memory import ReplayMemory
 from models.dqn_model import DQN
+from models.dqn_resnet_model import ResNet
 from agents.agent import Agent
 from utils.plotting import plot_rewards
 
@@ -20,7 +21,7 @@ class DQNAgent(Agent):
     https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
     """
     def __init__(self, env, batch_size=128, gamma=0.99, eps_start=0.9, eps_end=0.05,
-                 eps_decay=1000, tau=0.005, lr=1e-4, replay_mem_size=10000):
+                 eps_decay=1000, tau=0.005, lr=1e-4, replay_mem_size=10000, model_type="resnet"):
         super().__init__(env)
         # constants
         self.batch_size = batch_size  # the number of transitions sampled from the replay buffer
@@ -32,12 +33,18 @@ class DQNAgent(Agent):
 
         # torch, networks
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        # get values for policy/target net dims
-        n_actions = self.env.action_space.n
+
         observation, _ = self.env.reset()
-        n_observations = len(observation)
-        self.policy_net = DQN(n_observations, n_actions).to(self.device)
-        self.target_net = DQN(n_observations, n_actions).to(self.device)
+        n_actions = self.env.action_space.n
+        print("obs shape: ", observation.shape)
+        if model_type == "fc":
+            # get values for policy/target net dims
+            n_observations = len(observation)
+            self.policy_net = DQN(n_observations, n_actions).to(self.device)
+            self.target_net = DQN(n_observations, n_actions).to(self.device)
+        elif model_type == "resnet":
+            self.policy_net = ResNet(2, observation.shape, n_actions).to(self.device)
+            self.target_net = ResNet(2, observation.shape, n_actions).to(self.device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=lr, amsgrad=True)
 
