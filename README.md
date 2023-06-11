@@ -59,6 +59,46 @@ and does not guarantee that the code is perfect nor optimized, only that it can 
 However, this approach allows us to be more confident that the agents we are shipping work, and can provide proof
 for users when they use this package that the models will converge (at least once) via the tests.
 
+## Using Transformers
+
+Specifically, decoder-only transformer based on GPT-2 model, implemented by Andrej Karpathy in
+[minGPT](https://github.com/karpathy/minGPT). However, for Reinforcement Learning, we are (usually)
+working with other modalities of data besides language, and thus need to adapt the transformer
+to handle tabular, image, or some other kind of data.
+
+We also need to consider ways to encode state-actions pairs, as our output can be anything but how
+we decide to structure the transition is still really an open question. Right now, I just either one-hot
+encode the action and concatenate it with the state, or as a scalar value, or plan to add it as a plane to a state
+image (i.e. either an image from a game in pixels, or perhaps a grid/board with each channel representing a class of
+item in the game/environment)
+
+The minGPT architecture is modified to handle tabular data by projecting the input data via a linear layer
+into the original embedded dimension. For images, the idea will be the same, to have it handle the input
+and cast it to the embedding dimension using convolutions to parse the input. This means we must now define
+input dimension, and output dimension, instead of going from vocab-to-vocab dimensions.
+
+Examples of how to train the minGPT-TimeSeries (minGPT-TS) model are in the tests, with proof to show they
+converge given both dummy and real datasets, to create very accurate predictions (huber < ~0.001 for lunar lander
+predicting the next state (8 dimensions) given the previous state and one-hot action (12 dim)).
+
+The idea to apply this potentially to a Deep Q Network would be interesting, perhaps taking previous
+states (i.e. 8-dim in Lunar), and outputting the Q-values (4 actions=4-dim) at the next time-step. 
+This will be explored shortly, but unclear if it would be better than a traditional fully connected network.
+Although you do get the advantage of the model seeing previous states, which may or may not impact the future,
+if your Markov property is intact given your state representation. Sometimes we see this is not the case though,
+for example in Atari even the researchers stacked previous states to keep a quasi-Markov property intact, but
+by letting the model see as many steps back as you want (even to the beginning of the episode), we get the advantage
+of having that information, and not having to encode it or stack it onto the input. For example, consider an environment
+where an action you do early in the episode impact you a lot in the future. It would be cumbersome to create
+variables to capture all of that information, instead it may be better to allow a model to see how those types
+of transitions impact future rewards, similar to how GPT-2 predicts the next word based on all the words before it.
+
+However, many simple environments with proper Markov encoding will only have the last state really be impactful, and
+any learned relationships from previous states would just be a sort of collinearity, so it's questionable how useful
+this is, especially in simple environments but maybe interesting in more complicated ones. Additionally, from
+my testing in LunarLander, given 100 episodes with random transitions, this minGPT-TS achieves ~0.001 Huber, compared
+to 0.03 MSE.
+
 ## The Algorithm
 
 Tree-based search, similar to MuZero with time series transformer as transition model
