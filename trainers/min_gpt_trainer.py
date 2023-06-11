@@ -26,17 +26,17 @@ class Trainer:
         C.batch_size = 64
         C.learning_rate = 3e-4
         C.betas = (0.9, 0.95)
-        C.weight_decay = 0.1 # only applied on matmul weights
+        C.weight_decay = 0.1  # only applied on matmul weights
         C.grad_norm_clip = 1.0
         return C
 
-    def __init__(self, config, model, train_dataset, val_dataset, save_weights_path="best_model_weights.pth"):
+    def __init__(self, config, model, train_dataset, val_dataset, save_weights_path=None):
         self.config = config
         self.model = model
         self.optimizer = None
         self.train_dataset = train_dataset
         self.val_dataset = val_dataset
-        self.save_weights_path = save_weights_path
+        self.save_weights_path = save_weights_path  # string where to save weights i.e. "best_model_path.pth"
         self.callbacks = defaultdict(list)
 
         # determine the device we'll train on
@@ -139,7 +139,8 @@ class Trainer:
                     best_val_loss = average_val_loss
                     epochs_without_improvement = 0
                     # Save the model weights
-                    torch.save(model.state_dict(), self.save_weights_path)
+                    if self.save_weights_path:
+                        torch.save(model.state_dict(), self.save_weights_path)
                 else:
                     epochs_without_improvement += 1
 
