@@ -55,10 +55,10 @@ class GridWorldEnvTest(unittest.TestCase):
 
                 elif obs_type == "img":
                     self.assertIsInstance(obs, np.ndarray)
-                    self.assertEqual(obs.shape, (self.env.size, self.env.size, 3))
+                    self.assertEqual(obs.shape, (3, self.env.size, self.env.size))
 
                     self.assertIsInstance(next_obs, np.ndarray)
-                    self.assertEqual(next_obs.shape, (self.env.size, self.env.size, 3))
+                    self.assertEqual(next_obs.shape, (3, self.env.size, self.env.size))
                 else:
                     self.assertIsInstance(obs, dict)
                     self.assertIsInstance(next_obs, dict)

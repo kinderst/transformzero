@@ -21,7 +21,7 @@ class DQNAgent(Agent):
     https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
     """
     def __init__(self, env, batch_size=128, gamma=0.99, eps_start=0.9, eps_end=0.05,
-                 eps_decay=1000, tau=0.005, lr=1e-4, replay_mem_size=10000, model_type="resnet"):
+                 eps_decay=1000, tau=0.005, lr=1e-4, replay_mem_size=10000, model_type="fc"):
         super().__init__(env)
         # constants
         self.batch_size = batch_size  # the number of transitions sampled from the replay buffer
@@ -36,7 +36,7 @@ class DQNAgent(Agent):
 
         observation, _ = self.env.reset()
         n_actions = self.env.action_space.n
-        print("obs shape: ", observation.shape)
+
         if model_type == "fc":
             # get values for policy/target net dims
             n_observations = len(observation)
