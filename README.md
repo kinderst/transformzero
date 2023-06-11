@@ -99,9 +99,22 @@ this is, especially in simple environments but maybe interesting in more complic
 my testing in LunarLander, given 100 episodes with random transitions, this minGPT-TS achieves ~0.001 Huber, compared
 to 0.03 MSE.
 
+While I have not read too much in the literature about time series transformers, I theorize that it might be best to
+train models to predict each individual dimension, making the output dim always 1. The input dim is still the same,
+so we still get the same signal (as it was "encoded" "naturally" via it's time series n-dim data), and instead
+can focus on optimization of loss over just that one dimension, instead of have our weights be trying to find a way to
+predict all of them at once. This of course increases the computational cost, and would only be used in cases
+where you have the resources. The trade-off is: create many models that would theoretically be more accurate on
+each dimension (at each timestep of course), or create one model that predicts all the dimensions one once but
+gets trained on more data. Again, it would probably come down to how expensive the simulator is, and to obtain new
+data, versus train models. If our simulator is cheap, probably better to have 8x more data (assuming 8 dim like Lunar),
+and train one big model. But if the simulator is expensive (or we desire highly accurate results, and we want to make
+the most of our limited data, we train many models to just predict one dimension each. This is my theory, but it still
+needs to be (empirically) tested.
+
 ## The Algorithm
 
-Tree-based search, similar to MuZero with time series transformer as transition model
+Tree-based search, similar to MuZero with decoder-only GPT-2 time series transformer for models
 
 The general idea for the algorithm is as follows:
 
