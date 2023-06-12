@@ -28,12 +28,12 @@ def setup_logging(config):
         f.write(json.dumps(config.to_dict(), indent=4))
 
 
-def eval_split(model_param, trainer_param, dataset):
+def eval_split(model_param, device_param, dataset):
     results = []
     loader = DataLoader(dataset, batch_size=100, num_workers=0, drop_last=False)
     for b, (x, y) in enumerate(loader):
-        x = x.to(trainer_param.device)
-        y = y.to(trainer_param.device)
+        x = x.to(device_param)
+        y = y.to(device_param)
         model_output, _ = model_param(x)
         results.append(F.huber_loss(model_output, y).item())
 
