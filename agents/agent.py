@@ -19,7 +19,7 @@ class Agent:
 
         self.env = env
 
-    def select_action(self, obs: np.ndarray) -> int:
+    def select_action(self, obs: np.ndarray, action_mask=None) -> int:
         """Selects an action based on an observation
 
         Args:

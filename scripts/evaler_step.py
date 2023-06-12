@@ -8,6 +8,7 @@ from agents.random_agent import RandomAgent
 from agents.dqn_agent import DQNAgent
 from agents.ppo_agent import PPOAgent
 from environments.grid_world_env import GridWorldEnv
+from environments.solitaire_env import SolitaireWorldEnv
 
 
 def eval_step_episode(env_name, agent_name, weights_path):
@@ -18,6 +19,8 @@ def eval_step_episode(env_name, agent_name, weights_path):
         env = gym.make("LunarLander-v2", render_mode="human")
     elif env_name == "grid":
         env = GridWorldEnv(render_mode="human", num_obstacles=0, obs_type="img")
+    elif env_name == "solitaire":
+        env = SolitaireWorldEnv(render_mode="human", obs_type="img")
     else:
         print('err bad env name')
         return
@@ -43,15 +46,17 @@ def eval_step_episode(env_name, agent_name, weights_path):
         print("press any button to take step")
         _ = input()
 
-        print("observation is: ", observation)
+        action_mask = info['action_mask'] if 'action_mask' in info else None
+        print("action mask: ", action_mask)
 
-        model_outputs = agent.investigate_model_outputs(observation)
-        print("model outputs: ", model_outputs)
+        # print("observation is: ", observation)
+        # model_outputs = agent.investigate_model_outputs(observation)
+        # print("model outputs: ", model_outputs)
 
-        action = agent.select_action(observation)
+        action = agent.select_action(observation, action_mask)
         print("action taken: ", action)
 
-        observation, reward, terminated, truncated, _ = env.step(action)
+        observation, reward, terminated, truncated, info = env.step(action)
         done = terminated or truncated
 
 

@@ -6,6 +6,7 @@ import time
 from agents.dqn_agent import DQNAgent
 from agents.ppo_agent import PPOAgent
 from environments.grid_world_env import GridWorldEnv
+from environments.solitaire_env import SolitaireWorldEnv
 from utils.plotting import plot_rewards
 
 
@@ -31,13 +32,15 @@ def train_agent(env_name, agent_name, num_epochs):
         env = GridWorldEnv(num_obstacles=2, obs_type="img")
         early_stopping_threshold = 6.0
         dqn_lr = 1e-2
+    elif env_name == "solitaire":
+        env = SolitaireWorldEnv()
     else:
         print(f"No envs with name: {str(env_name)} found, exiting...")
         return
 
     # Initialize agent
     if agent_name == "dqn":
-        agent = DQNAgent(env, lr=dqn_lr, model_type="resnet")
+        agent = DQNAgent(env, lr=dqn_lr, model_type="resnet", eps_start=0.07)
         early_stopping_rounds = 50
     elif agent_name == "ppo":
         agent = PPOAgent(env)

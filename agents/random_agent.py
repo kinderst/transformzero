@@ -9,7 +9,8 @@ class RandomAgent(Agent):
         self.env = env
         self.n_actions = env.action_space.n
 
-    def select_action(self, obs: np.ndarray) -> int:
+    # TODO: add action mask functionality for random agent
+    def select_action(self, obs: np.ndarray, action_mask=None) -> int:
         return random.randrange(0, self.n_actions)
 
     def train(self, epochs: int, early_stopping_rounds: int, early_stopping_threshold: float, show_progress: bool = False) -> list:

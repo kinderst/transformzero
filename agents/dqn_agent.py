@@ -53,10 +53,10 @@ class DQNAgent(Agent):
                                      ('state', 'action', 'next_state', 'reward'))
         self.memory = ReplayMemory(replay_mem_size, self.Transition)
 
-    def select_action(self, obs: np.ndarray) -> int:
-        return int(self.select_action_with_eps(obs, self.eps_end))
+    def select_action(self, obs: np.ndarray, action_mask=None) -> int:
+        return int(self.select_action_with_eps(obs, self.eps_end, action_mask))
 
-    def select_action_with_eps(self, obs: np.ndarray, eps_threshold) -> int:
+    def select_action_with_eps(self, obs: np.ndarray, eps_threshold, action_mask=None) -> int:
         sample = random.random()
         if sample > eps_threshold:
             obs = torch.tensor(obs, dtype=torch.float32, device=self.device).unsqueeze(0)
@@ -64,10 +64,18 @@ class DQNAgent(Agent):
                 # t.max(1) will return the largest column value of each row.
                 # second column on max result is index of where max element was
                 # found, so we pick action with the larger expected reward.
-                return self.policy_net(obs).max(1)[1].view(1, 1).item()
+                if action_mask is not None:
+                    # if we have an action mask, only consider those actions
+                    # so get which index in action_mask? the one with the highest value, as it was taken from policy
+                    return int(action_mask[self.policy_net(obs)[:, action_mask].max(1)[1].view(1, 1).item()])
+                else:
+                    return self.policy_net(obs).max(1)[1].view(1, 1).item()
         else:
             # cast to int because sample() returns np.int64, for consistency
-            return int(self.env.action_space.sample())
+            if action_mask is not None:
+                return int(np.random.choice(action_mask, 1)[0])
+            else:
+                return int(self.env.action_space.sample())
 
     def train(self, epochs: int, early_stopping_rounds: int = -1, early_stopping_threshold: float = 200.0,
               show_progress: bool = False, print_progress: int = 0) -> list:

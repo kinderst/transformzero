@@ -47,7 +47,7 @@ class PPOAgent(Agent):
         self.value_optimizer = keras.optimizers.Adam(learning_rate=value_function_learning_rate)
 
     # Sample action from actor, basic functionally
-    def select_action(self, obs: np.ndarray) -> int:
+    def select_action(self, obs: np.ndarray, action_mask=None) -> int:
         logits = self.actor(obs.reshape(1, -1))
         action = tf.squeeze(tf.random.categorical(logits, 1), axis=1)
         return int(action[0].numpy())
