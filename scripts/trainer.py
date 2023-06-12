@@ -23,6 +23,14 @@ def train_agent(env_name, agent_name, num_epochs):
         env = GridWorldEnv(num_obstacles=0, obs_type="img")
         early_stopping_threshold = 8.0
         dqn_lr = 1e-2
+    elif env_name == "gridone":
+        env = GridWorldEnv(num_obstacles=1, obs_type="img")
+        early_stopping_threshold = 7.0
+        dqn_lr = 1e-2
+    elif env_name == "gridtwo":
+        env = GridWorldEnv(num_obstacles=2, obs_type="img")
+        early_stopping_threshold = 6.0
+        dqn_lr = 1e-2
     else:
         print(f"No envs with name: {str(env_name)} found, exiting...")
         return
@@ -30,7 +38,7 @@ def train_agent(env_name, agent_name, num_epochs):
     # Initialize agent
     if agent_name == "dqn":
         agent = DQNAgent(env, lr=dqn_lr, model_type="resnet")
-        early_stopping_rounds = 25
+        early_stopping_rounds = 50
     elif agent_name == "ppo":
         agent = PPOAgent(env)
         early_stopping_rounds = 3

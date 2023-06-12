@@ -69,8 +69,8 @@ class DQNAgent(Agent):
             # cast to int because sample() returns np.int64, for consistency
             return int(self.env.action_space.sample())
 
-    def train(self, epochs: int, early_stopping_rounds: int = -1,
-              early_stopping_threshold: float = 200.0, show_progress: bool = False) -> list:
+    def train(self, epochs: int, early_stopping_rounds: int = -1, early_stopping_threshold: float = 200.0,
+              show_progress: bool = False, print_progress: int = 0) -> list:
         steps_done = 0
         epoch_rewards = []
         for i_episode in range(epochs):
@@ -123,6 +123,9 @@ class DQNAgent(Agent):
 
                     if show_progress:
                         plot_rewards(epoch_rewards)
+                    if print_progress:
+                        if i_episode % print_progress == 0:
+                            print(total_reward)
                     break
             # for testing only!
             # if i_episode % 100 == 0:

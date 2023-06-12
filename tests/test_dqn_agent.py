@@ -115,17 +115,98 @@ class DQNAgentTests(unittest.TestCase):
         print("dqn lunar eval avg: ", avg_eval)
         self.assertGreaterEqual(avg_eval, eval_threshold)
 
-    def test_train_and_eval_grid(self):
+    def test_train_and_eval_gridnone_fc(self):
         # Tests to see if model can converge on grid world without any obstacles
         grid_env = GridWorldEnv(size=5, obs_type="flat", max_episode_length=20, num_obstacles=0)
         # lr of 1e-2 experimentally found to be good
-        agent = DQNAgent(grid_env, lr=1e-2)
+        agent = DQNAgent(grid_env, lr=1e-2, model_type="fc")
         early_stopping_rounds = 50
         early_stopping_threshold = 8.0
         eval_threshold = 6.5  # failed with 6.76 even with 8.04 train
         has_converged = False
-        for i in range(5):
+        for i in range(3):
             epoch_rewards = agent.train(2000,
+                                        early_stopping_rounds=early_stopping_rounds,
+                                        early_stopping_threshold=early_stopping_threshold,
+                                        show_progress=False)
+            avg_train = sum(epoch_rewards[-early_stopping_rounds:]) / early_stopping_rounds
+            print(f"dqn grid training average: {avg_train} for attempt: {i}")
+            if avg_train > early_stopping_threshold:
+                has_converged = True
+                break
+
+        self.assertTrue(has_converged)
+
+        eval_results = agent.eval(early_stopping_rounds)
+        avg_eval = sum(eval_results) / len(eval_results)
+        print("dqn grid eval avg: ", avg_eval)
+        self.assertGreaterEqual(avg_eval, eval_threshold)
+
+    def test_train_and_eval_gridnone_resnet(self):
+        # Tests to see if model can converge on grid world without any obstacles
+        grid_env = GridWorldEnv(size=5, obs_type="img", max_episode_length=20, num_obstacles=0)
+        # lr of 1e-2 experimentally found to be good
+        agent = DQNAgent(grid_env, lr=1e-2, model_type="resnet")
+        early_stopping_rounds = 50
+        early_stopping_threshold = 8.0
+        eval_threshold = 6.5
+        has_converged = False
+        for i in range(3):
+            epoch_rewards = agent.train(2000,
+                                        early_stopping_rounds=early_stopping_rounds,
+                                        early_stopping_threshold=early_stopping_threshold,
+                                        show_progress=False)
+            avg_train = sum(epoch_rewards[-early_stopping_rounds:]) / early_stopping_rounds
+            print(f"dqn grid training average: {avg_train} for attempt: {i}")
+            if avg_train > early_stopping_threshold:
+                has_converged = True
+                break
+
+        self.assertTrue(has_converged)
+
+        eval_results = agent.eval(early_stopping_rounds)
+        avg_eval = sum(eval_results) / len(eval_results)
+        print("dqn grid eval avg: ", avg_eval)
+        self.assertGreaterEqual(avg_eval, eval_threshold)
+
+    def test_train_and_eval_gridone_resnet(self):
+        # Tests to see if model can converge on grid world without any obstacles
+        grid_env = GridWorldEnv(size=5, obs_type="img", max_episode_length=20, num_obstacles=1)
+        # lr of 1e-2 experimentally found to be good
+        agent = DQNAgent(grid_env, lr=5e-3, model_type="resnet")
+        early_stopping_rounds = 50
+        early_stopping_threshold = 6.5
+        eval_threshold = 5.0
+        has_converged = False
+        for i in range(3):
+            epoch_rewards = agent.train(2500,
+                                        early_stopping_rounds=early_stopping_rounds,
+                                        early_stopping_threshold=early_stopping_threshold,
+                                        show_progress=False)
+            avg_train = sum(epoch_rewards[-early_stopping_rounds:]) / early_stopping_rounds
+            print(f"dqn grid training average: {avg_train} for attempt: {i}")
+            if avg_train > early_stopping_threshold:
+                has_converged = True
+                break
+
+        self.assertTrue(has_converged)
+
+        eval_results = agent.eval(early_stopping_rounds)
+        avg_eval = sum(eval_results) / len(eval_results)
+        print("dqn grid eval avg: ", avg_eval)
+        self.assertGreaterEqual(avg_eval, eval_threshold)
+
+    def test_train_and_eval_gridtwo_resnet(self):
+        # Tests to see if model can converge on grid world without any obstacles
+        grid_env = GridWorldEnv(size=5, obs_type="img", max_episode_length=20, num_obstacles=2)
+        # lr of 1e-2 experimentally found to be good
+        agent = DQNAgent(grid_env, lr=5e-3, model_type="resnet")
+        early_stopping_rounds = 50
+        early_stopping_threshold = 6.0
+        eval_threshold = 4.5
+        has_converged = False
+        for i in range(3):
+            epoch_rewards = agent.train(3000,
                                         early_stopping_rounds=early_stopping_rounds,
                                         early_stopping_threshold=early_stopping_threshold,
                                         show_progress=False)

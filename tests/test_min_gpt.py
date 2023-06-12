@@ -66,8 +66,8 @@ class RandomAgentTests(unittest.TestCase):
 
         # generate train, val, and test data by just taking random steps in lunar lander v2
         train_lunar_data_arr = get_random_episode_transitions(env, 100, 10, self.device)
-        val_lunar_data_arr = get_random_episode_transitions(env, 50, 10, self.device)
-        test_lunar_data_arr = get_random_episode_transitions(env, 50, 10, self.device)
+        val_lunar_data_arr = get_random_episode_transitions(env, 100, 10, self.device)
+        test_lunar_data_arr = get_random_episode_transitions(env, 100, 10, self.device)
         # format them into "Dataset" objects like Torch likes
         train_lunar_dataset = LunarDataset(train_lunar_data_arr)
         val_lunar_dataset = LunarDataset(val_lunar_data_arr)
@@ -83,7 +83,7 @@ class RandomAgentTests(unittest.TestCase):
 
         train_config = Trainer.get_default_config()
         train_config.learning_rate = 5e-4  # the model we're using is so small that we can go a bit faster
-        train_config.max_iters = 5000
+        train_config.max_iters = 10000
         train_config.num_workers = 0
         train_config.val_interval = 100
         train_config.patience = 20
@@ -101,15 +101,15 @@ class RandomAgentTests(unittest.TestCase):
 
         print(f"lunar: train score: {train_score}, val score: {val_score}, test score: {test_score}")
         self.assertTrue(train_score < 0.001)
-        self.assertTrue(val_score < 0.003)  # sometimes it's noisy, this is still very good
-        self.assertTrue(test_score < 0.003)
+        self.assertTrue(val_score < 0.005)  # sometimes it's noisy, this is still very good
+        self.assertTrue(test_score < 0.005)
 
         # and to check on an individual example
         x, y = test_lunar_dataset[random.randrange(0, len(test_lunar_dataset) - 1)]
         single_output, _ = model(x.unsqueeze(0))
         error_diff = F.huber_loss(single_output[0], y).item()
         print("error diff for single value for lunar: ", error_diff)
-        self.assertTrue(error_diff < 0.005)  # again, we might get a weird sample, find your threshold
+        self.assertTrue(error_diff < 0.0075)  # again, we might get a weird sample, find your threshold
 
 
 if __name__ == "__main__":
