@@ -33,14 +33,15 @@ def train_agent(env_name, agent_name, num_epochs):
         early_stopping_threshold = 6.0
         dqn_lr = 1e-2
     elif env_name == "solitaire":
-        env = SolitaireWorldEnv()
+        env = SolitaireWorldEnv(obs_type="img")
+        early_stopping_threshold = 9999.99
     else:
         print(f"No envs with name: {str(env_name)} found, exiting...")
         return
 
     # Initialize agent
     if agent_name == "dqn":
-        agent = DQNAgent(env, lr=dqn_lr, model_type="resnet", eps_start=0.07)
+        agent = DQNAgent(env, lr=dqn_lr, model_type="resnet")
         early_stopping_rounds = 50
     elif agent_name == "ppo":
         agent = PPOAgent(env)
@@ -51,10 +52,13 @@ def train_agent(env_name, agent_name, num_epochs):
 
     plt.ion()
 
+    print("starting training...")
+
     epoch_rewards = agent.train(num_epochs,
                                 early_stopping_rounds=early_stopping_rounds,
                                 early_stopping_threshold=early_stopping_threshold,
-                                show_progress=True)
+                                show_progress=False,
+                                print_progress=True)
 
     print("training complete")
 

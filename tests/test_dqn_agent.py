@@ -30,7 +30,7 @@ class DQNAgentTests(unittest.TestCase):
             for i in range(eval_loops):
                 eval_results = agent.eval(early_stopping_rounds)
                 avg_eval = sum(eval_results) / len(eval_results)
-                avg_eval_results(avg_eval)
+                avg_eval_results.append(avg_eval)
                 if avg_eval > eval_threshold:
                     eval_passed = True
                     break

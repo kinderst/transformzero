@@ -21,9 +21,10 @@ class SolitaireWorldEnv(gym.Env):
         "render_fps": 4,
     }
 
-    def __init__(self, render_mode: Optional[str] = None, obs_type: str = "flat"):
+    def __init__(self, render_mode: Optional[str] = None, obs_type: str = "flat", max_episode_length: int = 200):
         self.render_mode = render_mode
         self.obs_type = obs_type
+        self.max_episode_length = max_episode_length
 
         # Remember, obs are only thing agent can see. Other self... things can
         # exist but not be in here, to manage underlying but unknown-to-agent state
@@ -53,24 +54,25 @@ class SolitaireWorldEnv(gym.Env):
             "piles_behind_actual": MultiDiscrete(piles_behind_actual_obs_shape)  # for testing
         })
 
-        self.render_mode = render_mode
-
     # returns array of 0s and 1s, of length num actions,
     # where if the value at the index in the array for the action is 1
     # the action is valid
-    def action_mask(self, deck_cards_p, suit_cards_p, pile_cards_p):
+    @staticmethod
+    def action_mask(deck_cards_p, suit_cards_p, pile_cards_p):
         mask = np.zeros(548, dtype=np.int8)
         # can always tap the deck
         mask[0] = 1
         # gets the highest nonzero index by rows, for the first row of the deck array
         # credit: https://stackoverflow.com/questions/67921398/find-the-index-of-last-non-zero-value-per-column-of-a-2-d-array
         # deck first nonzero, obviously we only care about row 0, hence [0] at end
-        highest_nonzero_deck_am = np.where(np.count_nonzero(deck_cards_p, axis=1)==0, -1, (deck_cards_p.shape[1]-1) - np.argmin(deck_cards_p[:,::-1]==0, axis=1))[0]
+        highest_nonzero_deck_am = np.where(np.count_nonzero(deck_cards_p, axis=1) == 0, -1,
+                                           (deck_cards_p.shape[1]-1) - np.argmin(deck_cards_p[:, ::-1] == 0, axis=1))[0]
         # need highest nonzero, since needed for checking pile to pile actions
-        highest_nonzeros_piles_am = np.where(np.count_nonzero(pile_cards_p, axis=0)==0, -1, (pile_cards_p.shape[0]-1) - np.argmin(pile_cards_p[::-1,:]==0, axis=0))
+        highest_nonzeros_piles_am = np.where(np.count_nonzero(pile_cards_p, axis=0)==0, -1,
+                                             (pile_cards_p.shape[0]-1) - np.argmin(pile_cards_p[::-1, :] == 0, axis=0))
 
         # for each action, besides 0 because always possible to tap deck
-        for i in range(1,548):
+        for i in range(1, 548):
             if i == 1:
                 can_deck_to_suit, _ = deck_to_suit_check(deck_cards_p, suit_cards_p, highest_nonzero_deck_am)
                 if can_deck_to_suit:
@@ -105,226 +107,6 @@ class SolitaireWorldEnv(gym.Env):
                     mask[i] = 1
 
         return mask.nonzero()[0]
-
-    # gym step func
-    def step(self, action):
-        assert self.action_space.contains(action)
-
-        terminated = False
-        # game reward for initial part of step starts at zero, changes depending on action outcome
-        game_reward = 0
-        # agent reward however is -1 because we want to penalize it for steping, since time is a factor
-        reward = -1
-
-        # source: https://en.wikipedia.org/wiki/Klondike_(solitaire) Microsoft Windows Scoring section
-        game_score_deck_to_pile = 5
-        game_score_deck_to_suit = 10
-        game_score_pile_to_suit = 10
-        game_score_pile_card_reveal = 5
-        game_score_suit_to_pile = -15
-        game_score_deck_cycle = -20
-        game_score_victory = 10000
-
-        agent_reward_deck_to_pile = 5
-        agent_reward_deck_to_suit = 15
-        agent_reward_pile_to_suit = 15
-        agent_reward_pile_card_reveal = 10
-        agent_reward_suit_to_pile = -20
-        agent_reward_deck_cycle = -5
-        agent_reward_deck_flip = 0
-        agent_reward_victory = 10000
-
-
-        # action 0 is tapping deck
-        if action == 0:
-            # append first row to end, for underlying and known sets
-            self.deck_cards = np.append(self.deck_cards, [self.deck_cards[0,:]], axis=0)
-            self.deck_cards_known = np.append(self.deck_cards_known, [self.deck_cards_known[0,:]], axis=0)
-            # then delete first row for both
-            self.deck_cards = np.delete(self.deck_cards, (0), axis=0)
-            self.deck_cards_known = np.delete(self.deck_cards_known, (0), axis=0)
-            # and copy the top row of deck cards to deck cards known, since we know it now
-            self.deck_cards_known[0,:] = self.deck_cards[0,:]
-
-            if self.deck_position == 7:
-                # flatten, put zeros at end, reshape
-                # part of rules to how deck works, weird
-                flat_deck = self.deck_cards.flatten()
-                # count occurances of 0's
-                num_zeros = np.count_nonzero(flat_deck == 0)
-                # remove zeros
-                flat_deck_no_zeros = np.delete(flat_deck, np.where(flat_deck == 0), axis=-1)
-                # add them to end
-                flat_deck_zeros = np.append(flat_deck_no_zeros, np.zeros(num_zeros, dtype=np.int8), axis = -1)
-                # update state
-                self.deck_cards = flat_deck_zeros.reshape((8, 3))
-                # at this point, since we have cycled through, we now have complete information and can just copy
-                self.deck_cards_known = self.deck_cards
-                self.deck_position = 0
-                # no reward, unless its the 7th
-                game_reward += game_score_deck_cycle
-                reward += agent_reward_deck_cycle
-            else:
-                reward += agent_reward_deck_flip
-                # increase deck position (so to know when to reset deck and penalize)
-                self.deck_position = self.deck_position + 1
-
-        # action 1 is tapping active deck card, attempting to sent to suit
-        elif action == 1:
-            highest_nonzero_deck = np.where(np.count_nonzero(self.deck_cards, axis=1)==0, -1, (self.deck_cards.shape[1]-1) - np.argmin(self.deck_cards[:,::-1]==0, axis=1))[0]
-            can_deck_to_suit, deck_card_suit = deck_to_suit_check(self.deck_cards, self.suit_cards, highest_nonzero_deck)
-            if can_deck_to_suit:
-                # update suit cards
-                self.suit_cards[deck_card_suit] = self.suit_cards[deck_card_suit] + 1
-                # set card val to 0 for empty at the given index
-                self.deck_cards[0,highest_nonzero_deck] = 0
-                self.deck_cards_known[0,highest_nonzero_deck] = 0
-                game_reward += agent_reward_deck_to_suit
-                reward += agent_reward_deck_to_suit
-
-                # check if terminal/goal state, all suits at king
-                if self.suit_cards[0] == 13 and self.suit_cards[1] == 13 and self.suit_cards[2] == 13 and self.suit_cards[3] == 13:
-                    print("VICTORY!")
-                    print(self.suit_cards)
-                    terminated = True
-                    game_reward += game_score_victory
-                    reward += agent_reward_victory
-
-        # actions 2-8 are trying to move top deck card to one of 7 other piles
-        elif 2 <= action <= 8:
-            pile_i = action - 2
-            highest_nonzero_deck = np.where(np.count_nonzero(self.deck_cards, axis=1)==0, -1, (self.deck_cards.shape[1]-1) - np.argmin(self.deck_cards[:,::-1]==0, axis=1))[0]
-
-            can_deck_to_pile = deck_to_pile_check(self.deck_cards, self.pile_cards, pile_i, highest_nonzero_deck)
-            if can_deck_to_pile:
-                # shift all cards one index up to make room for this at bottom (index 0)
-                self.pile_cards[1:,pile_i] = self.pile_cards[:-1,pile_i]
-                # set bottom most index card to be the one we added, since we can now
-                self.pile_cards[0,pile_i] = self.deck_cards[0,highest_nonzero_deck]
-
-                # set deck card val to 0 for empty at the given index
-                self.deck_cards[0,highest_nonzero_deck] = 0
-                self.deck_cards_known[0,highest_nonzero_deck] = 0
-
-                # deck to pile rewards
-                game_reward += game_score_deck_to_pile
-                reward += agent_reward_deck_to_pile
-
-        # actions 9-15 are trying to move suit's 0 (hearts) to one of 7 other piles
-        # actions 16-22 are trying to move suit's 1 (diamonds) to one of 7 other piles
-        # ...etc
-        elif 9 <= action <= 36:
-            pile_i = (action - 9) % 7
-            suit_j = (action - 9) // 7
-
-            can_suit_to_pile = suit_to_pile_check(self.suit_cards, self.pile_cards, pile_i, suit_j)
-
-            if can_suit_to_pile:
-                # shift pile cards up, to make room for suit card to add
-                self.pile_cards[1:,pile_i] = self.pile_cards[:-1,pile_i]
-                # set bottom most index card to be the one we added, since we can now
-                # have to multiply by suit_j*13 to get original card val back from suit and num
-                self.pile_cards[0,pile_i] = int((suit_j * 13) + self.suit_cards[suit_j])
-
-                # reduce suit card val, since we took a card off it
-                self.suit_cards[suit_j] -= 1
-
-                # suit to pile rewards (negative)
-                game_reward += game_score_suit_to_pile
-                reward += agent_reward_suit_to_pile
-
-        # actions 37-43 are trying to move bottom-most card in one of 7 piles
-        # to their given suits
-        elif 37 <= action <= 43:
-            pile_i = (action - 37)
-
-            can_pile_to_suit, pile_card_suit = pile_to_suit_check(self.pile_cards, self.suit_cards, pile_i)
-
-            if can_pile_to_suit:
-                # update suit cards
-                self.suit_cards[pile_card_suit] += 1
-
-                # update pile cards
-                # (set cards from beginning to one from end to the cards from 1 to end)
-                self.pile_cards[:-1,pile_i] = self.pile_cards[1:,pile_i]
-                # and set end card to 0, since we removed a card from the pile
-                self.pile_cards[-1,pile_i] = 0
-
-                # pile to suit reward
-                game_reward += game_score_pile_to_suit
-                reward += agent_reward_pile_to_suit
-
-                # check if the pile is now empty, and there are upside-down cards behind it
-                # if so, turn it up and add it to correct spot in pile_cards
-                if not self.pile_cards[:,pile_i].any():
-                    # get highest nonzero for pile behind card
-                    highest_nonzeros_piles_behind = np.where(np.count_nonzero(self.pile_behind_cards, axis=0)==0, -1, (self.pile_behind_cards.shape[0]-1) - np.argmin(self.pile_behind_cards[::-1,:]==0, axis=0))[pile_i]
-                    if highest_nonzeros_piles_behind > -1:
-                        self.pile_cards[0, pile_i] = self.pile_behind_cards[highest_nonzeros_piles_behind,pile_i]
-                        self.pile_behind_cards[highest_nonzeros_piles_behind, pile_i] = 0
-                        self.pile_behind_cards_known[highest_nonzeros_piles_behind, pile_i] = 0
-                        game_reward += game_score_pile_card_reveal
-                        reward += agent_reward_pile_card_reveal
-
-                        # check if terminal/goal state, all suits at king
-                if self.suit_cards[0] == 13 and self.suit_cards[1] == 13 and self.suit_cards[2] == 13 and self.suit_cards[3] == 13:
-                    print("VICTORY!")
-                    print(self.suit_cards)
-                    terminated = True
-                    game_reward += game_score_victory
-                    reward += agent_reward_victory
-
-        # actions 44 to 547 are pile to pile moves, defined by the vars below
-        elif 44 <= action <= 547:
-            pile_i = (action - 44) // 72
-            piles_to_move = int(((action - 44 - (72*pile_i)) // 12) + 1)
-            # print("piles to move: ", piles_to_move)
-            pile_to_move_to_j = (pile_i + piles_to_move) % 7
-            card_k = (action - 44) % 12
-
-            highest_nonzeros_piles = np.where(np.count_nonzero(self.pile_cards, axis=0)==0, -1, (self.pile_cards.shape[0]-1) - np.argmin(self.pile_cards[::-1,:]==0, axis=0))
-            highest_nonzero_pile_i = highest_nonzeros_piles[pile_i]
-            can_pile_to_pile = pile_to_pile_check(self.pile_cards, pile_i, pile_to_move_to_j, card_k, highest_nonzero_pile_i)
-
-            if can_pile_to_pile:
-                # if can pile to pile,
-                # card_k = 0, highest_nonzero_pile_i = 4, we are moving 4 cards to pile j, and these cards go under the others at pile j
-                # so pile j needs to shift cards up by highest_nzpi - c_k, i.e. 4
-                # +1 because ...?
-                index_to_move = highest_nonzero_pile_i - card_k + 1
-
-                # first, shift cards up
-                self.pile_cards[index_to_move:,pile_to_move_to_j] = self.pile_cards[:(13 - index_to_move),pile_to_move_to_j]
-                # then add in cards from pile i
-                self.pile_cards[:index_to_move,pile_to_move_to_j] = self.pile_cards[:index_to_move,pile_i]
-                # finally shift pile i cards down
-                self.pile_cards[:(13 - index_to_move),pile_i] = self.pile_cards[index_to_move:,pile_i]
-                # and zero out rest of pile
-                self.pile_cards[(13 - index_to_move):,pile_i] = 0
-
-                # if pile is now empty that we removed some cards, i.e. we removed top card because card k is 0, meaning no cards below it selected as top
-                if card_k == 0:
-                    # get highest nonzero for pile behind card
-                    highest_nonzeros_piles_behind = np.where(np.count_nonzero(self.pile_behind_cards, axis=0)==0, -1, (self.pile_behind_cards.shape[0]-1) - np.argmin(self.pile_behind_cards[::-1,:]==0, axis=0))[pile_i]
-                    if highest_nonzeros_piles_behind > -1:
-                        self.pile_cards[0, pile_i] = self.pile_behind_cards[highest_nonzeros_piles_behind,pile_i]
-                        self.pile_behind_cards[highest_nonzeros_piles_behind, pile_i] = 0
-                        self.pile_behind_cards_known[highest_nonzeros_piles_behind, pile_i] = 0
-                        game_reward += game_score_pile_card_reveal
-                        reward += agent_reward_pile_card_reveal
-
-        self.game_episode_rewards += game_reward
-        self.agent_episode_rewards += reward
-        # try if agent rewards get too low, just terminate
-        # if self.agent_episode_rewards < -300:
-        #     terminated = True
-
-        if self.render_mode == "human":
-            self.render()
-        # return self._get_obs(), reward, terminated, {"action_mask": self.action_mask(self.deck_cards, self.suit_cards, self.pile_cards)}
-        return self._get_obs(), reward, terminated, False, {
-            "action_mask": self.action_mask(self.deck_cards, self.suit_cards, self.pile_cards)
-        }
 
     def _get_obs(self):
         if self.obs_type == "flat":
@@ -426,6 +208,226 @@ class SolitaireWorldEnv(gym.Env):
                            spades_channel, clubs_channel, unknown_channel])
         return obs_me
 
+    # gym step func
+    def step(self, action):
+        assert self.action_space.contains(action)
+
+        terminated = False
+        # game reward for initial part of step starts at zero, changes depending on action outcome
+        game_reward = 0
+        # agent reward however is -1 because we want to penalize it for steping, since time is a factor
+        reward = -1
+
+        # source: https://en.wikipedia.org/wiki/Klondike_(solitaire) Microsoft Windows Scoring section
+        game_score_deck_to_pile = 5
+        game_score_deck_to_suit = 10
+        game_score_pile_to_suit = 10
+        game_score_pile_card_reveal = 5
+        game_score_suit_to_pile = -15
+        game_score_deck_cycle = -20
+        game_score_victory = 10000
+
+        agent_reward_deck_to_pile = 5
+        agent_reward_deck_to_suit = 15
+        agent_reward_pile_to_suit = 10
+        agent_reward_pile_card_reveal = 5
+        agent_reward_suit_to_pile = -16
+        agent_reward_deck_cycle = -1
+        agent_reward_deck_flip = -1
+        agent_reward_victory = 30
+
+        # action 0 is tapping deck
+        if action == 0:
+            # append first row to end, for underlying and known sets
+            self.deck_cards = np.append(self.deck_cards, [self.deck_cards[0,:]], axis=0)
+            self.deck_cards_known = np.append(self.deck_cards_known, [self.deck_cards_known[0,:]], axis=0)
+            # then delete first row for both
+            self.deck_cards = np.delete(self.deck_cards, (0), axis=0)
+            self.deck_cards_known = np.delete(self.deck_cards_known, (0), axis=0)
+            # and copy the top row of deck cards to deck cards known, since we know it now
+            self.deck_cards_known[0,:] = self.deck_cards[0,:]
+
+            if self.deck_position == 7:
+                # flatten, put zeros at end, reshape
+                # part of rules to how deck works, weird
+                flat_deck = self.deck_cards.flatten()
+                # count occurances of 0's
+                num_zeros = np.count_nonzero(flat_deck == 0)
+                # remove zeros
+                flat_deck_no_zeros = np.delete(flat_deck, np.where(flat_deck == 0), axis=-1)
+                # add them to end
+                flat_deck_zeros = np.append(flat_deck_no_zeros, np.zeros(num_zeros, dtype=np.int8), axis = -1)
+                # update state
+                self.deck_cards = flat_deck_zeros.reshape((8, 3))
+                # at this point, since we have cycled through, we now have complete information and can just copy
+                self.deck_cards_known = self.deck_cards
+                self.deck_position = 0
+                # no reward, unless its the 7th
+                game_reward += game_score_deck_cycle
+                reward += agent_reward_deck_cycle
+            else:
+                reward += agent_reward_deck_flip
+                # increase deck position (so to know when to reset deck and penalize)
+                self.deck_position = self.deck_position + 1
+
+        # action 1 is tapping active deck card, attempting to sent to suit
+        elif action == 1:
+            highest_nonzero_deck = np.where(np.count_nonzero(self.deck_cards, axis=1)==0, -1, (self.deck_cards.shape[1]-1) - np.argmin(self.deck_cards[:,::-1]==0, axis=1))[0]
+            can_deck_to_suit, deck_card_suit = deck_to_suit_check(self.deck_cards, self.suit_cards, highest_nonzero_deck)
+            if can_deck_to_suit:
+                # update suit cards
+                self.suit_cards[deck_card_suit] = self.suit_cards[deck_card_suit] + 1
+                # set card val to 0 for empty at the given index
+                self.deck_cards[0,highest_nonzero_deck] = 0
+                self.deck_cards_known[0,highest_nonzero_deck] = 0
+                game_reward += agent_reward_deck_to_suit
+                reward += agent_reward_deck_to_suit
+
+                # check if terminal/goal state, all suits at king
+                if self.suit_cards[0] == 13 and self.suit_cards[1] == 13 and self.suit_cards[2] == 13 and self.suit_cards[3] == 13:
+                    print("VICTORY!")
+                    print(self.suit_cards)
+                    terminated = True
+                    game_reward += game_score_victory
+                    reward += agent_reward_victory
+
+        # actions 2-8 are trying to move top deck card to one of 7 other piles
+        elif 2 <= action <= 8:
+            pile_i = action - 2
+            highest_nonzero_deck = np.where(np.count_nonzero(self.deck_cards, axis=1)==0, -1, (self.deck_cards.shape[1]-1) - np.argmin(self.deck_cards[:,::-1]==0, axis=1))[0]
+
+            can_deck_to_pile = deck_to_pile_check(self.deck_cards, self.pile_cards, pile_i, highest_nonzero_deck)
+            if can_deck_to_pile:
+                # shift all cards one index up to make room for this at bottom (index 0)
+                self.pile_cards[1:,pile_i] = self.pile_cards[:-1,pile_i]
+                # set bottom most index card to be the one we added, since we can now
+                self.pile_cards[0,pile_i] = self.deck_cards[0,highest_nonzero_deck]
+
+                # set deck card val to 0 for empty at the given index
+                self.deck_cards[0,highest_nonzero_deck] = 0
+                self.deck_cards_known[0,highest_nonzero_deck] = 0
+
+                # deck to pile rewards
+                game_reward += game_score_deck_to_pile
+                reward += agent_reward_deck_to_pile
+
+        # actions 9-15 are trying to move suit's 0 (hearts) to one of 7 other piles
+        # actions 16-22 are trying to move suit's 1 (diamonds) to one of 7 other piles
+        # ...etc
+        elif 9 <= action <= 36:
+            pile_i = (action - 9) % 7
+            suit_j = (action - 9) // 7
+
+            can_suit_to_pile = suit_to_pile_check(self.suit_cards, self.pile_cards, pile_i, suit_j)
+
+            if can_suit_to_pile:
+                # shift pile cards up, to make room for suit card to add
+                self.pile_cards[1:, pile_i] = self.pile_cards[:-1, pile_i]
+                # set bottom most index card to be the one we added, since we can now
+                # have to multiply by suit_j*13 to get original card val back from suit and num
+                self.pile_cards[0, pile_i] = int((suit_j * 13) + self.suit_cards[suit_j])
+
+                # reduce suit card val, since we took a card off it
+                self.suit_cards[suit_j] -= 1
+
+                # suit to pile rewards (negative)
+                game_reward += game_score_suit_to_pile
+                reward += agent_reward_suit_to_pile
+
+        # actions 37-43 are trying to move bottom-most card in one of 7 piles
+        # to their given suits
+        elif 37 <= action <= 43:
+            pile_i = (action - 37)
+
+            can_pile_to_suit, pile_card_suit = pile_to_suit_check(self.pile_cards, self.suit_cards, pile_i)
+
+            if can_pile_to_suit:
+                # update suit cards
+                self.suit_cards[pile_card_suit] += 1
+
+                # update pile cards
+                # (set cards from beginning to one from end to the cards from 1 to end)
+                self.pile_cards[:-1,pile_i] = self.pile_cards[1:,pile_i]
+                # and set end card to 0, since we removed a card from the pile
+                self.pile_cards[-1,pile_i] = 0
+
+                # pile to suit reward
+                game_reward += game_score_pile_to_suit
+                reward += agent_reward_pile_to_suit
+
+                # check if the pile is now empty, and there are upside-down cards behind it
+                # if so, turn it up and add it to correct spot in pile_cards
+                if not self.pile_cards[:,pile_i].any():
+                    # get highest nonzero for pile behind card
+                    highest_nonzeros_piles_behind = np.where(np.count_nonzero(self.pile_behind_cards, axis=0)==0, -1, (self.pile_behind_cards.shape[0]-1) - np.argmin(self.pile_behind_cards[::-1,:]==0, axis=0))[pile_i]
+                    if highest_nonzeros_piles_behind > -1:
+                        self.pile_cards[0, pile_i] = self.pile_behind_cards[highest_nonzeros_piles_behind,pile_i]
+                        self.pile_behind_cards[highest_nonzeros_piles_behind, pile_i] = 0
+                        self.pile_behind_cards_known[highest_nonzeros_piles_behind, pile_i] = 0
+                        game_reward += game_score_pile_card_reveal
+                        reward += agent_reward_pile_card_reveal
+
+                        # check if terminal/goal state, all suits at king
+                if self.suit_cards[0] == 13 and self.suit_cards[1] == 13 and self.suit_cards[2] == 13 and self.suit_cards[3] == 13:
+                    print("VICTORY!")
+                    print(self.suit_cards)
+                    terminated = True
+                    game_reward += game_score_victory
+                    reward += agent_reward_victory
+
+        # actions 44 to 547 are pile to pile moves, defined by the vars below
+        elif 44 <= action <= 547:
+            pile_i = (action - 44) // 72
+            piles_to_move = int(((action - 44 - (72*pile_i)) // 12) + 1)
+            # print("piles to move: ", piles_to_move)
+            pile_to_move_to_j = (pile_i + piles_to_move) % 7
+            card_k = (action - 44) % 12
+
+            highest_nonzeros_piles = np.where(np.count_nonzero(self.pile_cards, axis=0)==0, -1, (self.pile_cards.shape[0]-1) - np.argmin(self.pile_cards[::-1,:]==0, axis=0))
+            highest_nonzero_pile_i = highest_nonzeros_piles[pile_i]
+            can_pile_to_pile = pile_to_pile_check(self.pile_cards, pile_i, pile_to_move_to_j, card_k, highest_nonzero_pile_i)
+
+            if can_pile_to_pile:
+                # if can pile to pile,
+                # card_k = 0, highest_nonzero_pile_i = 4, we are moving 4 cards to pile j, and these cards go under the others at pile j
+                # so pile j needs to shift cards up by highest_nzpi - c_k, i.e. 4
+                # +1 because ...?
+                index_to_move = highest_nonzero_pile_i - card_k + 1
+
+                # first, shift cards up
+                self.pile_cards[index_to_move:,pile_to_move_to_j] = self.pile_cards[:(13 - index_to_move),pile_to_move_to_j]
+                # then add in cards from pile i
+                self.pile_cards[:index_to_move,pile_to_move_to_j] = self.pile_cards[:index_to_move,pile_i]
+                # finally shift pile i cards down
+                self.pile_cards[:(13 - index_to_move),pile_i] = self.pile_cards[index_to_move:,pile_i]
+                # and zero out rest of pile
+                self.pile_cards[(13 - index_to_move):,pile_i] = 0
+
+                # if pile is now empty that we removed some cards, i.e. we removed top card because card k is 0, meaning no cards below it selected as top
+                if card_k == 0:
+                    # get highest nonzero for pile behind card
+                    highest_nonzeros_piles_behind = np.where(np.count_nonzero(self.pile_behind_cards, axis=0)==0, -1, (self.pile_behind_cards.shape[0]-1) - np.argmin(self.pile_behind_cards[::-1,:]==0, axis=0))[pile_i]
+                    if highest_nonzeros_piles_behind > -1:
+                        self.pile_cards[0, pile_i] = self.pile_behind_cards[highest_nonzeros_piles_behind,pile_i]
+                        self.pile_behind_cards[highest_nonzeros_piles_behind, pile_i] = 0
+                        self.pile_behind_cards_known[highest_nonzeros_piles_behind, pile_i] = 0
+                        game_reward += game_score_pile_card_reveal
+                        reward += agent_reward_pile_card_reveal
+
+        self.game_episode_rewards += game_reward
+        self.agent_episode_rewards += reward
+
+        self._current_step += 1
+        if self._current_step >= self.max_episode_length or self.agent_episode_rewards < -50:
+            terminated = True
+
+        if self.render_mode == "human":
+            self.render()
+        # return self._get_obs(), reward, terminated, {"action_mask": self.action_mask(self.deck_cards, self.suit_cards, self.pile_cards)}
+        return self._get_obs(), reward, terminated, False, {
+            "action_mask": self.action_mask(self.deck_cards, self.suit_cards, self.pile_cards)
+        }
+
     def reset(
             self,
             seed: Optional[int] = None,
@@ -505,6 +507,8 @@ class SolitaireWorldEnv(gym.Env):
 
         # self.pile_behind_cards[0,1] = 0
         # self.pile_behind_cards_known[0,1] = 0
+
+        self._current_step = 0
 
         if self.render_mode == "human":
             self.render()

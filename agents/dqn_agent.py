@@ -89,9 +89,10 @@ class DQNAgent(Agent):
             for t in count():
                 current_eps = self.eps_end + (self.eps_start - self.eps_end) * \
                                 math.exp(-1. * steps_done / self.eps_decay)
-                action = self.select_action_with_eps(observation, current_eps)
+                action_mask = info['action_mask'] if 'action_mask' in info else None
+                action = self.select_action_with_eps(observation, current_eps, action_mask)
                 action_tensor = torch.tensor([[action]], device=self.device, dtype=torch.long)
-                next_observation, reward, terminated, truncated, _ = self.env.step(action)
+                next_observation, reward, terminated, truncated, info = self.env.step(action)
                 steps_done += 1
                 total_reward += reward
                 reward_tensor = torch.tensor([reward], device=self.device)

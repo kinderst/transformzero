@@ -173,11 +173,11 @@ class GridWorldEnv(gym.Env):
         terminated = np.array_equal(self._agent_location, self._target_location)
         # if the agent ends, they get the reward, -1 for stepping
         reward = 10 if terminated else -1
-        # but also terminate if agent reached max num steps, just don't want to give reward
-        if self._current_step >= self.max_episode_length:
-            terminated = True
 
         self._current_step += 1
+        # but also terminate if agent reached max num steps, just don't want to give reward
+        if self._current_step > self.max_episode_length:
+            terminated = True
 
         if self.render_mode == "human":
             self._render_frame()
