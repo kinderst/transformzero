@@ -3,7 +3,7 @@ gymnasium
 gymnasium[box2d]
 
 matplotlib~=3.3.4
-torch~=1.10.2
+torch~=1.10.0
 setuptools~=58.5.3
 tensorflow~=2.8.0
 scipy~=1.6.2

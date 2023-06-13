@@ -143,7 +143,7 @@ class DQNAgent(Agent):
                         plot_rewards(epoch_rewards)
                     if print_progress:
                         if i_episode % print_progress == 0:
-                            print(total_reward)
+                            print(f"episode: {i_episode}, reward: {total_reward}")
                     break
             # for testing only!
             # if i_episode % 100 == 0:

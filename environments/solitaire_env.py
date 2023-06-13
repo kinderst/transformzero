@@ -428,7 +428,7 @@ class SolitaireWorldEnv(gym.Env):
         self.agent_episode_rewards += reward
 
         self._current_step += 1
-        if self._current_step >= self.max_episode_length or self.agent_episode_rewards < -50:
+        if self._current_step >= self.max_episode_length or self.agent_episode_rewards < -150:
             terminated = True
 
         if self.render_mode == "human":
