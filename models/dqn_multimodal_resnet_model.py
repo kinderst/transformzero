@@ -76,35 +76,24 @@ class ResidualBlock(nn.Module):
 
 
 class MultimodalCNN(nn.Module):
-    def __init__(self, num_layers, input_shape1, input_shape2, num_actions):
+    def __init__(self, num_layers, input_shapes, num_actions):
         super(MultimodalCNN, self).__init__()
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.modalities = list(input_shapes.keys())
+        self.cnns = nn.ModuleDict({modality: ResNet(num_layers, input_shapes[modality], num_actions) for modality in self.modalities})
+        self.layer_norm = nn.LayerNorm(len(self.modalities) * num_actions)
+        self.fc = nn.Linear(len(self.modalities) * num_actions, num_actions)
 
-        self.cnn1 = ResNet(num_layers, input_shape1, num_actions)
-        self.cnn2 = ResNet(num_layers, input_shape2, num_actions)
+    def forward(self, state_batch):
+        tensor_batch = {modality: torch.cat([torch.tensor(sample[modality], device=self.device, dtype=torch.float32).unsqueeze(0)
+                                             for sample in state_batch]) for modality in self.modalities}
 
-        self.fc = nn.Linear(2 * num_actions, num_actions)
+        features = []
+        for modality in self.modalities:
+            cnn_output = self.cnns[modality](tensor_batch[modality])
+            features.append(cnn_output)
 
-    def forward(self, image1, image2):
-        # print("img 1 shape: ", image1.shape)
-        # print("img 2 shape: ", image2.shape)
-        features1 = self.cnn1(image1)
-        features2 = self.cnn2(image2)
-
-        # Concatenate features from both images
-        combined_features = torch.cat((features1, features2), dim=1)
-
-        x = self.fc(combined_features)
+        combined_features = torch.cat(features, dim=1)
+        normalized_features = self.layer_norm(combined_features)
+        x = self.fc(normalized_features)
         return x
-
-# # Usage example
-# image1 = torch.randn(1, 3, 32, 32)  # Assuming 32x32 RGB image
-# image2 = torch.randn(1, 3, 32, 32)  # Assuming 32x32 RGB image
-#
-# num_layers = 3
-# input_shape1 = (3, 32, 32)
-# input_shape2 = (3, 32, 32)
-# num_actions = 10
-#
-# model = MultimodalCNN(num_layers, input_shape1, input_shape2, num_actions)
-# output = model(image1, image2)
-# print(output.shape)  # Output shape: (1, 10) for 10 classes

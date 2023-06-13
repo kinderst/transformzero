@@ -47,12 +47,9 @@ class DQNAgent(Agent):
             self.policy_net = ResNet(2, observation.shape, n_actions).to(self.device)
             self.target_net = ResNet(2, observation.shape, n_actions).to(self.device)
         elif model_type == "multires":
-            self.policy_net = MultimodalCNN(2,
-                                            observation['imgone'].shape,
-                                            observation['imgtwo'].shape, n_actions).to(self.device)
-            self.target_net = MultimodalCNN(2,
-                                            observation['imgone'].shape,
-                                            observation['imgtwo'].shape, n_actions).to(self.device)
+            input_shapes = {modality: array.shape for modality, array in observation.items()}
+            self.policy_net = MultimodalCNN(2, input_shapes, n_actions).to(self.device)
+            self.target_net = MultimodalCNN(2, input_shapes, n_actions).to(self.device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=lr, amsgrad=True)
 

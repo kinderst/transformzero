@@ -52,7 +52,7 @@ class MinGPTTests(unittest.TestCase):
         # Instantiate minGPT trainer
         train_config = Trainer.get_default_config()
         train_config.learning_rate = 5e-4  # the model we're using is so small that we can go a bit faster
-        train_config.max_iters = 5000
+        train_config.max_iters = 7500
         train_config.num_workers = 0
         train_config.val_interval = 100
         train_config.patience = 20

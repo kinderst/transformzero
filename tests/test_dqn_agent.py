@@ -148,7 +148,7 @@ class DQNAgentTests(unittest.TestCase):
         agent = MultimodalDQNAgent(grid_env, lr=5e-3, model_type="multires", eps_decay=1250)
         self.loop_train_and_eval(agent, early_stopping_rounds=100, early_stopping_threshold=7.5, eval_threshold=6.0,
                                  name_string="multiresnet gridnone",
-                                 train_epochs=3500, train_loops=3, eval_loops=5)
+                                 train_epochs=1500, train_loops=3, eval_loops=5)
 
 
 if __name__ == '__main__':

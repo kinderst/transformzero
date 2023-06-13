@@ -13,12 +13,14 @@ class MultimodalDQNAgent(DQNAgent):
         super().__init__(env, batch_size, gamma, eps_start, eps_end, eps_decay, tau, lr, replay_mem_size, model_type)
         # replay memory
         self.memory = MultimodalReplayMemory(replay_mem_size, self.Transition, self.device)
+        obs, info = env.reset()
+        self.modalities = obs.keys()
 
     def select_action_with_eps(self, obs: dict, eps_threshold, action_mask=None) -> int:
         sample = random.random()
         if sample > eps_threshold:
-            obs_one = torch.tensor(obs['imgone'], dtype=torch.float32, device=self.device).unsqueeze(0)
-            obs_two = torch.tensor(obs['imgtwo'], dtype=torch.float32, device=self.device).unsqueeze(0)
+            # obs_one = torch.tensor(obs['imgone'], dtype=torch.float32, device=self.device).unsqueeze(0)
+            # obs_two = torch.tensor(obs['imgtwo'], dtype=torch.float32, device=self.device).unsqueeze(0)
             with torch.no_grad():
                 # t.max(1) will return the largest column value of each row.
                 # second column on max result is index of where max element was
@@ -26,11 +28,9 @@ class MultimodalDQNAgent(DQNAgent):
                 if action_mask is not None:
                     # if we have an action mask, only consider those actions
                     # so get which index in action_mask? the one with the highest value, as it was taken from policy
-                    return int(action_mask[self.policy_net(obs_one,
-                                                           obs_two)[:, action_mask].max(1)[1].view(1, 1).item()])
+                    return int(action_mask[self.policy_net([obs])[:, action_mask].max(1)[1].view(1, 1).item()])
                 else:
-                    return self.policy_net(obs_one,
-                                           obs_two).max(1)[1].view(1, 1).item()
+                    return self.policy_net([obs]).max(1)[1].view(1, 1).item()
         else:
             # cast to int because sample() returns np.int64, for consistency
             if action_mask is not None:
@@ -46,21 +46,29 @@ class MultimodalDQNAgent(DQNAgent):
 
         non_final_mask = torch.tensor(tuple(map(lambda s: s is not None,
                                                 batch.next_state)), device=self.device, dtype=torch.bool)
+        #
+        # non_final_next_states_one = torch.cat([torch.tensor(s['imgone'], device=self.device, dtype=torch.float32).unsqueeze(0)
+        #                                        for s in batch.next_state
+        #                                        if s is not None])
+        #
+        # non_final_next_states_two = torch.cat([torch.tensor(s['imgtwo'], device=self.device, dtype=torch.float32).unsqueeze(0)
+        #                                        for s in batch.next_state
+        #                                        if s is not None])
 
-        non_final_next_states_one = torch.cat([torch.tensor(s['imgone'], device=self.device, dtype=torch.float32).unsqueeze(0)
-                                               for s in batch.next_state
-                                               if s is not None])
-
-        non_final_next_states_two = torch.cat([torch.tensor(s['imgtwo'], device=self.device, dtype=torch.float32).unsqueeze(0)
-                                               for s in batch.next_state
-                                               if s is not None])
+        non_final_next_states_batch = []
+        for s in batch.next_state:
+            if s is not None:
+                non_final_next_states_batch.append({modality: s[modality] for modality in self.modalities})
 
         # state_batch = torch.cat(batch.state)
-        state_one_batch = torch.cat([torch.tensor(s['imgone'], device=self.device, dtype=torch.float32).unsqueeze(0)
-                                     for s in batch.state])
-        state_two_batch = torch.cat([torch.tensor(s['imgtwo'], device=self.device, dtype=torch.float32).unsqueeze(0)
-                                     for s in batch.state])
+        # state_one_batch = torch.cat([torch.tensor(s['imgone'], device=self.device, dtype=torch.float32).unsqueeze(0)
+        #                              for s in batch.state])
+        # state_two_batch = torch.cat([torch.tensor(s['imgtwo'], device=self.device, dtype=torch.float32).unsqueeze(0)
+        #                              for s in batch.state])
         # print('state one batch shape ', state_two_batch.shape)
+        state_batch = []
+        for s in batch.state:
+            state_batch.append({modality: s[modality] for modality in self.modalities})
 
         action_batch = torch.cat(batch.action)
         reward_batch = torch.cat(batch.reward)
@@ -68,7 +76,7 @@ class MultimodalDQNAgent(DQNAgent):
         # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
         # columns of actions taken. These are the actions which would've been taken
         # for each batch state according to policy_net
-        state_action_values = self.policy_net(state_one_batch, state_two_batch).gather(1, action_batch)
+        state_action_values = self.policy_net(state_batch).gather(1, action_batch)
 
         # Compute V(s_{t+1}) for all next states.
         # Expected values of actions for non_final_next_states are computed based
@@ -77,8 +85,7 @@ class MultimodalDQNAgent(DQNAgent):
         # state value or 0 in case the state was final.
         next_state_values = torch.zeros(self.batch_size, device=self.device)
         with torch.no_grad():
-            next_state_values[non_final_mask] = self.target_net(non_final_next_states_one,
-                                                                non_final_next_states_two).max(1)[0]
+            next_state_values[non_final_mask] = self.target_net(non_final_next_states_batch).max(1)[0]
         # Compute the expected Q values
         expected_state_action_values = (next_state_values * self.gamma) + reward_batch
 
@@ -94,10 +101,10 @@ class MultimodalDQNAgent(DQNAgent):
         self.optimizer.step()
 
     def investigate_model_outputs(self, obs: dict) -> np.ndarray:
-        obs_one = torch.tensor(obs['imgone'], dtype=torch.float32, device=self.device).unsqueeze(0)
-        obs_two = torch.tensor(obs['imgtwo'], dtype=torch.float32, device=self.device).unsqueeze(0)
+        # obs_one = torch.tensor(obs['imgone'], dtype=torch.float32, device=self.device).unsqueeze(0)
+        # obs_two = torch.tensor(obs['imgtwo'], dtype=torch.float32, device=self.device).unsqueeze(0)
         with torch.no_grad():
             # t.max(1) will return the largest column value of each row.
             # second column on max result is index of where max element was
             # found, so we pick action with the larger expected reward.
-            return self.policy_net(obs_one, obs_two).detach().cpu().numpy()[0]
+            return self.policy_net([obs]).detach().cpu().numpy()[0]

@@ -13,6 +13,7 @@ from utils.plotting import plot_rewards
 
 def train_agent(env_name, agent_name, num_epochs):
     dqn_lr = 1e-4
+    dqn_eps_decay = 1000
 
     # Initialize environment
     if env_name == "cartpole":
@@ -25,32 +26,37 @@ def train_agent(env_name, agent_name, num_epochs):
         env = GridWorldEnv(num_obstacles=0, obs_type="multiimg")
         early_stopping_threshold = 8.0
         dqn_lr = 1e-2
+        dqn_eps_decay = 1500
     elif env_name == "gridone":
         env = GridWorldEnv(num_obstacles=1, obs_type="img")
         early_stopping_threshold = 7.0
         dqn_lr = 1e-2
+        dqn_eps_decay = 2000
     elif env_name == "gridtwo":
         env = GridWorldEnv(num_obstacles=2, obs_type="img")
         early_stopping_threshold = 6.0
         dqn_lr = 1e-2
+        dqn_eps_decay = 2500
     elif env_name == "solitaireimg":
         env = SolitaireWorldEnv(obs_type="img")
         early_stopping_threshold = 500.0
         dqn_lr = 1e-6
+        dqn_eps_decay = 5000
     elif env_name == "solitairemulti":
         env = SolitaireWorldEnv(obs_type="multiimg")
         early_stopping_threshold = 500.0
         dqn_lr = 5e-7
+        dqn_eps_decay = 5000
     else:
         print(f"No envs with name: {str(env_name)} found, exiting...")
         return
 
     # Initialize agent
     if agent_name == "dqn":
-        agent = DQNAgent(env, lr=dqn_lr, model_type="resnet", eps_decay=5000, eps_end=0.1, gamma=0.9)
+        agent = DQNAgent(env, lr=dqn_lr, model_type="resnet", eps_decay=dqn_eps_decay, eps_end=0.1, gamma=0.9)
         early_stopping_rounds = 50
     elif agent_name == "multidqn":
-        agent = MultimodalDQNAgent(env, lr=dqn_lr, model_type="multires", eps_decay=5000, eps_end=0.1, gamma=0.9)
+        agent = MultimodalDQNAgent(env, lr=dqn_lr, model_type="multires", eps_decay=dqn_eps_decay, eps_end=0.1, gamma=0.9)
         early_stopping_rounds = 50
     elif agent_name == "ppo":
         agent = PPOAgent(env)
