@@ -145,7 +145,7 @@ class DQNAgent(Agent):
                         if i_episode % print_progress == 0:
                             print(f"episode: {i_episode}, reward: {total_reward}")
                     if i_episode % 50 == 0:
-                        self.save_model("current_dqn_training.pt")
+                        self.save_model("current_dqn_training")
                     break
             # for testing only!
             # if i_episode % 100 == 0:
