@@ -40,7 +40,7 @@ def train_agent(env_name, agent_name, num_epochs):
     elif env_name == "solitairemulti":
         env = SolitaireWorldEnv(obs_type="multiimg")
         early_stopping_threshold = 500.0
-        dqn_lr = 1e-6
+        dqn_lr = 5e-7
     else:
         print(f"No envs with name: {str(env_name)} found, exiting...")
         return

@@ -226,7 +226,7 @@ class SolitaireWorldEnv(gym.Env):
         # game reward for initial part of step starts at zero, changes depending on action outcome
         game_reward = 0
         # agent reward however is -1 because we want to penalize it for steping, since time is a factor
-        reward = -1
+        reward = 0
 
         # source: https://en.wikipedia.org/wiki/Klondike_(solitaire) Microsoft Windows Scoring section
         game_score_deck_to_pile = 5
@@ -242,8 +242,8 @@ class SolitaireWorldEnv(gym.Env):
         agent_reward_pile_to_suit = 10/10
         agent_reward_pile_card_reveal = 5/10
         agent_reward_suit_to_pile = -17/10
-        agent_reward_deck_cycle = -1/10
-        agent_reward_deck_flip = -1/10
+        agent_reward_deck_cycle = -2.5/10
+        agent_reward_deck_flip = -2.5/10
         agent_reward_victory = 30/10
 
         # action 0 is tapping deck
