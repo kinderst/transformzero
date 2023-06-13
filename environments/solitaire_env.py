@@ -21,7 +21,7 @@ class SolitaireWorldEnv(gym.Env):
         "render_fps": 4,
     }
 
-    def __init__(self, render_mode: Optional[str] = None, obs_type: str = "flat", max_episode_length: int = 200):
+    def __init__(self, render_mode: Optional[str] = None, obs_type: str = "flat", max_episode_length: int = 100):
         self.render_mode = render_mode
         self.obs_type = obs_type
         self.max_episode_length = max_episode_length
@@ -428,7 +428,7 @@ class SolitaireWorldEnv(gym.Env):
         self.agent_episode_rewards += reward
 
         self._current_step += 1
-        if self._current_step >= self.max_episode_length or self.agent_episode_rewards < -150:
+        if self._current_step >= self.max_episode_length:
             terminated = True
 
         if self.render_mode == "human":
