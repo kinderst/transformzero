@@ -21,7 +21,7 @@ class SolitaireWorldEnv(gym.Env):
         "render_fps": 4,
     }
 
-    def __init__(self, render_mode: Optional[str] = None, obs_type: str = "flat", max_episode_length: int = 100):
+    def __init__(self, render_mode: Optional[str] = None, obs_type: str = "flat", max_episode_length: int = 200):
         self.render_mode = render_mode
         self.obs_type = obs_type
         self.max_episode_length = max_episode_length
@@ -237,14 +237,14 @@ class SolitaireWorldEnv(gym.Env):
         game_score_deck_cycle = -20
         game_score_victory = 10000
 
-        agent_reward_deck_to_pile = 5
-        agent_reward_deck_to_suit = 15
-        agent_reward_pile_to_suit = 10
-        agent_reward_pile_card_reveal = 5
-        agent_reward_suit_to_pile = -16
-        agent_reward_deck_cycle = -1
-        agent_reward_deck_flip = -1
-        agent_reward_victory = 30
+        agent_reward_deck_to_pile = 5/10
+        agent_reward_deck_to_suit = 15/10
+        agent_reward_pile_to_suit = 10/10
+        agent_reward_pile_card_reveal = 5/10
+        agent_reward_suit_to_pile = -17/10
+        agent_reward_deck_cycle = -1/10
+        agent_reward_deck_flip = -1/10
+        agent_reward_victory = 30/10
 
         # action 0 is tapping deck
         if action == 0:

@@ -143,7 +143,7 @@ class DQNAgent(Agent):
                         plot_rewards(epoch_rewards)
                     if print_progress:
                         if i_episode % print_progress == 0:
-                            print(f"episode: {i_episode}, reward: {total_reward}")
+                            print(f"episode: {i_episode}, reward: {total_reward}, eps: {current_eps}")
                     if i_episode % 50 == 0:
                         self.save_model("current_dqn_training")
                     break
@@ -207,7 +207,7 @@ class DQNAgent(Agent):
             # t.max(1) will return the largest column value of each row.
             # second column on max result is index of where max element was
             # found, so we pick action with the larger expected reward.
-            return self.policy_net(obs).detach().numpy()[0]
+            return self.policy_net(obs).detach().cpu().numpy()[0]
 
     # Save the agent's model or parameters to a file
     def save_model(self, filepath) -> None:

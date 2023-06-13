@@ -100,4 +100,4 @@ class MultimodalDQNAgent(DQNAgent):
             # t.max(1) will return the largest column value of each row.
             # second column on max result is index of where max element was
             # found, so we pick action with the larger expected reward.
-            return self.policy_net(obs_one, obs_two).detach().numpy()[0]
+            return self.policy_net(obs_one, obs_two).detach().cpu().numpy()[0]
