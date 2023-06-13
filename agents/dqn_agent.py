@@ -47,7 +47,6 @@ class DQNAgent(Agent):
             self.policy_net = ResNet(2, observation.shape, n_actions).to(self.device)
             self.target_net = ResNet(2, observation.shape, n_actions).to(self.device)
         elif model_type == "multires":
-            print('using multires...')
             self.policy_net = MultimodalCNN(2,
                                             observation['imgone'].shape,
                                             observation['imgtwo'].shape, n_actions).to(self.device)
