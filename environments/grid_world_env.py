@@ -30,7 +30,14 @@ class GridWorldEnv(gym.Env):
         if obs_type == "flat":
             self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(size*size,), dtype=np.float32)
         elif obs_type == "img":
-            self.observation_space = spaces.MultiBinary([size, size, 3])
+            self.observation_space = spaces.MultiBinary([3, size, size])
+        elif obs_type == "multiimg":
+            self.observation_space = spaces.Dict(
+                {
+                    "imgone": spaces.MultiBinary([3, size, size]),
+                    "imgtwo": spaces.MultiBinary([3, size, size]),
+                }
+            )
         else:
             self.observation_space = spaces.Dict(
                 {
@@ -73,6 +80,8 @@ class GridWorldEnv(gym.Env):
             return self._get_flat_obs()
         elif self.obs_type == "img":
             return self._get_img_obs()
+        elif self.obs_type == "multiimg":
+            return self._get_multi_img_obs()
         else:
             return {
                 "agent": self._agent_location,
@@ -101,6 +110,13 @@ class GridWorldEnv(gym.Env):
         obstacle_plane = self._get_obstacle_matrix()
         # Stack to 3D obs
         return np.stack((agent_plane, target_plane, obstacle_plane))
+
+    def _get_multi_img_obs(self):
+        img_obs = self._get_img_obs()
+        return {
+            "imgone": img_obs,
+            "imgtwo": img_obs
+        }
 
     def _get_info(self):
         return {

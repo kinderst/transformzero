@@ -29,7 +29,7 @@ def eval_step_episode(env_name, agent_name, weights_path):
     if agent_name == "rand":
         agent = RandomAgent(env)
     elif agent_name == "dqn":
-        agent = DQNAgent(env, model_type="resnet")
+        agent = DQNAgent(env, model_type="multires")
     elif agent_name == "ppo":
         agent = PPOAgent(env)
     else:
@@ -50,8 +50,8 @@ def eval_step_episode(env_name, agent_name, weights_path):
         print("action mask: ", action_mask)
 
         # print("observation is: ", observation)
-        # model_outputs = agent.investigate_model_outputs(observation)
-        # print("model outputs: ", model_outputs)
+        model_outputs = agent.investigate_model_outputs(observation)
+        print("model outputs: ", model_outputs)
 
         action = agent.select_action(observation, action_mask)
         print("action taken: ", action)

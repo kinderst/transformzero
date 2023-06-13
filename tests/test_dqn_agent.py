@@ -101,7 +101,7 @@ class DQNAgentTests(unittest.TestCase):
         # (chance of failing about 20%)^3 = 0.008, ^5 = 0.00032 or 0.032%
         agent = DQNAgent(self.cartpole_env)
         self.loop_train_and_eval(agent, early_stopping_rounds=100, early_stopping_threshold=485.0, eval_threshold=450.0,
-                                 name_string="fc gridnone",
+                                 name_string="fc cartpole",
                                  train_epochs=2500, train_loops=3, eval_loops=3)
 
     def test_train_and_eval_lunar(self):
@@ -109,7 +109,7 @@ class DQNAgentTests(unittest.TestCase):
         lunar_env = gym.make("LunarLander-v2")
         agent = DQNAgent(lunar_env)
         self.loop_train_and_eval(agent, early_stopping_rounds=100, early_stopping_threshold=200.0, eval_threshold=150.0,
-                                 name_string="fc gridnone",
+                                 name_string="fc lunar",
                                  train_epochs=2500, train_loops=3, eval_loops=3)
 
     def test_train_and_eval_gridnone_fc(self):
@@ -117,28 +117,28 @@ class DQNAgentTests(unittest.TestCase):
         grid_env = GridWorldEnv(size=5, obs_type="flat", max_episode_length=20, num_obstacles=0)
         # lr of 1e-2 experimentally found to be good
         agent = DQNAgent(grid_env, lr=1e-2, model_type="fc")
-        self.loop_train_and_eval(agent, early_stopping_rounds=100, early_stopping_threshold=7.0, eval_threshold=5.0,
+        self.loop_train_and_eval(agent, early_stopping_rounds=100, early_stopping_threshold=7.5, eval_threshold=6.0,
                                  name_string="fc gridnone",
                                  train_epochs=2500, train_loops=3, eval_loops=3)
 
     def test_train_and_eval_gridnone_resnet(self):
         grid_env = GridWorldEnv(size=5, obs_type="img", max_episode_length=20, num_obstacles=0)
         agent = DQNAgent(grid_env, lr=1e-2, model_type="resnet", eps_decay=1250)
-        self.loop_train_and_eval(agent, early_stopping_rounds=100, early_stopping_threshold=7.0, eval_threshold=5.0,
+        self.loop_train_and_eval(agent, early_stopping_rounds=100, early_stopping_threshold=7.5, eval_threshold=6.0,
                                  name_string="resnet gridnone",
                                  train_epochs=2500, train_loops=3, eval_loops=3)
 
     def test_train_and_eval_gridone_resnet(self):
         grid_env = GridWorldEnv(size=5, obs_type="img", max_episode_length=20, num_obstacles=1)
         agent = DQNAgent(grid_env, lr=5e-3, model_type="resnet", eps_decay=1500)
-        self.loop_train_and_eval(agent, early_stopping_rounds=100, early_stopping_threshold=5.5, eval_threshold=3.5,
+        self.loop_train_and_eval(agent, early_stopping_rounds=100, early_stopping_threshold=5.75, eval_threshold=3.5,
                                  name_string="resnet gridone",
                                  train_epochs=2500, train_loops=3, eval_loops=3)
 
     def test_train_and_eval_gridtwo_resnet(self):
         grid_env = GridWorldEnv(size=5, obs_type="img", max_episode_length=20, num_obstacles=2)
         agent = DQNAgent(grid_env, lr=5e-3, model_type="resnet", eps_decay=2000)
-        self.loop_train_and_eval(agent, early_stopping_rounds=100, early_stopping_threshold=5.0, eval_threshold=2.0,
+        self.loop_train_and_eval(agent, early_stopping_rounds=100, early_stopping_threshold=5.5, eval_threshold=2.0,
                                  name_string="resnet gridtwo",
                                  train_epochs=3000, train_loops=3, eval_loops=5)
 

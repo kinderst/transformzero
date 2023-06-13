@@ -11,6 +11,7 @@ import torch.nn as nn
 from buffers.dqn_replay_memory import ReplayMemory
 from models.dqn_model import DQN
 from models.dqn_resnet_model import ResNet
+from models.dqn_multimodal_resnet_model import MultimodalCNN
 from agents.agent import Agent
 from utils.plotting import plot_rewards
 
@@ -45,13 +46,20 @@ class DQNAgent(Agent):
         elif model_type == "resnet":
             self.policy_net = ResNet(2, observation.shape, n_actions).to(self.device)
             self.target_net = ResNet(2, observation.shape, n_actions).to(self.device)
+        elif model_type == "multires":
+            self.policy_net = MultimodalCNN(2,
+                                            observation['imgone'].shape,
+                                            observation['imgtwo'].shape, n_actions).to(self.device)
+            self.target_net = MultimodalCNN(2,
+                                            observation['imgone'].shape,
+                                            observation['imgtwo'].shape, n_actions).to(self.device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=lr, amsgrad=True)
 
         # replay memory
         self.Transition = namedtuple('Transition',
                                      ('state', 'action', 'next_state', 'reward'))
-        self.memory = ReplayMemory(replay_mem_size, self.Transition)
+        self.memory = ReplayMemory(replay_mem_size, self.Transition, self.device)
 
     def select_action(self, obs: np.ndarray, action_mask=None) -> int:
         return int(self.select_action_with_eps(obs, self.eps_end, action_mask))
@@ -85,7 +93,7 @@ class DQNAgent(Agent):
             # Initialize the environment and get it's state
             total_reward = 0
             observation, info = self.env.reset()
-            observation_tensor = torch.tensor(observation, dtype=torch.float32, device=self.device).unsqueeze(0)
+            # observation_tensor = torch.tensor(observation, dtype=torch.float32, device=self.device).unsqueeze(0)
             for t in count():
                 current_eps = self.eps_end + (self.eps_start - self.eps_end) * \
                                 math.exp(-1. * steps_done / self.eps_decay)
@@ -99,18 +107,18 @@ class DQNAgent(Agent):
                 done = terminated or truncated
 
                 if terminated:
-                    next_observation_tensor = None
-                else:
-                    next_observation_tensor = torch.tensor(next_observation,
-                                                           dtype=torch.float32,
-                                                           device=self.device).unsqueeze(0)
+                    next_observation = None
+                # else:
+                #     next_observation_tensor = torch.tensor(next_observation,
+                #                                            dtype=torch.float32,
+                #                                            device=self.device).unsqueeze(0)
 
                 # Store the transition in memory
-                self.memory.push(observation_tensor, action_tensor, next_observation_tensor, reward_tensor)
+                self.memory.push(observation, action_tensor, next_observation, reward_tensor)
 
                 # Move to the next state
                 observation = next_observation
-                observation_tensor = next_observation_tensor
+                # observation_tensor = next_observation_tensor
 
                 # Perform one step of the optimization (on the policy network)
                 self.optimize_model()
