@@ -19,11 +19,12 @@ class Agent:
 
         self.env = env
 
-    def select_action(self, obs: np.ndarray, action_mask=None) -> int:
+    def select_action(self, obs, action_mask: np.ndarray = None) -> int:
         """Selects an action based on an observation
 
         Args:
-            obs (np.ndarray): A flat, 1D numpy array for the observation
+            obs (np.ndarray, dict): A flat, 1D numpy array, (C,H,W) img, or dict (multimodal) for the observation
+            action_mask (np.ndarray): mask of actions numbers that are allowed (i.e. [3, 5, 10])
 
         Returns:
             int: Action taken, as defined by environment.

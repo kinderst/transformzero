@@ -47,6 +47,7 @@ class DQNAgent(Agent):
             self.policy_net = ResNet(2, observation.shape, n_actions).to(self.device)
             self.target_net = ResNet(2, observation.shape, n_actions).to(self.device)
         elif model_type == "multires":
+            print('using multires...')
             self.policy_net = MultimodalCNN(2,
                                             observation['imgone'].shape,
                                             observation['imgtwo'].shape, n_actions).to(self.device)
@@ -61,7 +62,7 @@ class DQNAgent(Agent):
                                      ('state', 'action', 'next_state', 'reward'))
         self.memory = ReplayMemory(replay_mem_size, self.Transition, self.device)
 
-    def select_action(self, obs: np.ndarray, action_mask=None) -> int:
+    def select_action(self, obs, action_mask=None) -> int:
         return int(self.select_action_with_eps(obs, self.eps_end, action_mask))
 
     def select_action_with_eps(self, obs: np.ndarray, eps_threshold, action_mask=None) -> int:
@@ -149,7 +150,7 @@ class DQNAgent(Agent):
             #     print(current_eps)
         return epoch_rewards
 
-    def optimize_model(self):
+    def optimize_model(self) -> None:
         if len(self.memory) < self.batch_size:
             return
         transitions = self.memory.sample(self.batch_size)
@@ -207,12 +208,12 @@ class DQNAgent(Agent):
             return self.policy_net(obs).detach().numpy()[0]
 
     # Save the agent's model or parameters to a file
-    def save_model(self, filepath):
+    def save_model(self, filepath) -> None:
         print(f"saving model to {filepath}.pt")
         filepath_with_extension = filepath + ".pt"
         torch.save(self.policy_net.state_dict(), filepath_with_extension)
 
     # Load the agent's model or parameters from a file
-    def load_model(self, filepath):
+    def load_model(self, filepath) -> None:
         print(f"loading model {filepath}")
         self.policy_net.load_state_dict(torch.load(filepath))

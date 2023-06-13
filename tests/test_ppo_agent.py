@@ -6,10 +6,10 @@ import tensorflow as tf
 
 
 class PPOAgentTests(unittest.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.cartpole_env = gym.make("CartPole-v1")
 
-    def test_select_action(self):
+    def test_select_action(self) -> None:
         agent = PPOAgent(self.cartpole_env)
         observation, _ = self.cartpole_env.reset()
         n_observations = len(observation)
@@ -21,7 +21,7 @@ class PPOAgentTests(unittest.TestCase):
             self.assertGreaterEqual(action, 0)
             self.assertLess(action, agent.env.action_space.n)
 
-    def test_select_action_with_logits(self):
+    def test_select_action_with_logits(self) -> None:
         agent = PPOAgent(self.cartpole_env)
         observation, _ = self.cartpole_env.reset()
         n_observations = len(observation)
@@ -35,14 +35,14 @@ class PPOAgentTests(unittest.TestCase):
             self.assertGreaterEqual(action[0].numpy(), 0)
             self.assertLess(action[0].numpy(), agent.env.action_space.n)
 
-    def test_train(self):
+    def test_train(self) -> None:
         agent = PPOAgent(self.cartpole_env)
         epochs = 3
         episode_rewards = agent.train(epochs)
         self.assertIsInstance(episode_rewards, list)
         self.assertEqual(len(episode_rewards), epochs)
 
-    def test_eval(self):
+    def test_eval(self) -> None:
         agent = PPOAgent(self.cartpole_env)
         num_episodes = 10
         episode_rewards = agent.eval(num_episodes)
@@ -51,7 +51,7 @@ class PPOAgentTests(unittest.TestCase):
         for reward in episode_rewards:
             self.assertIsInstance(reward, (int, float))
 
-    def test_investigate_model_outputs(self):
+    def test_investigate_model_outputs(self) -> None:
         agent = PPOAgent(self.cartpole_env)
         observation, _ = self.cartpole_env.reset()
         n_observations = len(observation)
@@ -60,7 +60,7 @@ class PPOAgentTests(unittest.TestCase):
         self.assertIsInstance(outputs, np.ndarray)
         self.assertEqual(outputs.shape, (agent.env.action_space.n,))
 
-    def test_train_and_eval_cartpole(self):
+    def test_train_and_eval_cartpole(self) -> None:
         # Tests to see if model can converge on cartpole
         agent = PPOAgent(self.cartpole_env)
         early_stopping_rounds = 7

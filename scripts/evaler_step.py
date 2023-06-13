@@ -6,6 +6,7 @@ from itertools import count
 
 from agents.random_agent import RandomAgent
 from agents.dqn_agent import DQNAgent
+from agents.dqn_multimodal_agent import MultimodalDQNAgent
 from agents.ppo_agent import PPOAgent
 from environments.grid_world_env import GridWorldEnv
 from environments.solitaire_env import SolitaireWorldEnv
@@ -18,7 +19,7 @@ def eval_step_episode(env_name, agent_name, weights_path):
     elif env_name == "lunar":
         env = gym.make("LunarLander-v2", render_mode="human")
     elif env_name == "grid":
-        env = GridWorldEnv(render_mode="human", num_obstacles=0, obs_type="img")
+        env = GridWorldEnv(render_mode="human", num_obstacles=0, obs_type="multiimg")
     elif env_name == "solitaire":
         env = SolitaireWorldEnv(render_mode="human", obs_type="img")
     else:
@@ -29,7 +30,10 @@ def eval_step_episode(env_name, agent_name, weights_path):
     if agent_name == "rand":
         agent = RandomAgent(env)
     elif agent_name == "dqn":
-        agent = DQNAgent(env, model_type="multires")
+        agent = DQNAgent(env, model_type="resnet")
+    elif agent_name == "multidqn":
+        print('using multidqn')
+        agent = MultimodalDQNAgent(env, model_type="multires")
     elif agent_name == "ppo":
         agent = PPOAgent(env)
     else:

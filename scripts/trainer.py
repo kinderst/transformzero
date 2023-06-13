@@ -5,6 +5,7 @@ import time
 
 from agents.dqn_agent import DQNAgent
 from agents.ppo_agent import PPOAgent
+from agents.dqn_multimodal_agent import MultimodalDQNAgent
 from environments.grid_world_env import GridWorldEnv
 from environments.solitaire_env import SolitaireWorldEnv
 from utils.plotting import plot_rewards
@@ -21,7 +22,7 @@ def train_agent(env_name, agent_name, num_epochs):
         env = gym.make("LunarLander-v2")
         early_stopping_threshold = 200.0
     elif env_name == "gridnone":
-        env = GridWorldEnv(num_obstacles=0, obs_type="img")
+        env = GridWorldEnv(num_obstacles=0, obs_type="multiimg")
         early_stopping_threshold = 8.0
         dqn_lr = 1e-2
     elif env_name == "gridone":
@@ -42,6 +43,9 @@ def train_agent(env_name, agent_name, num_epochs):
     # Initialize agent
     if agent_name == "dqn":
         agent = DQNAgent(env, lr=dqn_lr, model_type="resnet")
+        early_stopping_rounds = 50
+    elif agent_name == "multidqn":
+        agent = MultimodalDQNAgent(env, lr=dqn_lr, model_type="multires")
         early_stopping_rounds = 50
     elif agent_name == "ppo":
         agent = PPOAgent(env)

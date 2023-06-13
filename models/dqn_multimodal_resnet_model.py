@@ -85,6 +85,8 @@ class MultimodalCNN(nn.Module):
         self.fc = nn.Linear(2 * num_actions, num_actions)
 
     def forward(self, image1, image2):
+        # print("img 1 shape: ", image1.shape)
+        # print("img 2 shape: ", image2.shape)
         features1 = self.cnn1(image1)
         features2 = self.cnn2(image2)
 

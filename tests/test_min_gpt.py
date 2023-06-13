@@ -15,7 +15,7 @@ from trainers.min_gpt_trainer import Trainer
 
 
 class MinGPTTests(unittest.TestCase):
-    def loop_random_single_example_eval(self, model, dataset, threshold, name_string):
+    def loop_random_single_example_eval(self, model, dataset, threshold, name_string) -> None:
         single_passed = False
         single_results = []
         for i in range(10):
@@ -29,11 +29,11 @@ class MinGPTTests(unittest.TestCase):
         print(f"minGPT {name_string} single results: {single_results}")
         self.assertTrue(single_passed)
 
-    def setUp(self):
+    def setUp(self) -> None:
         set_seed(3407)
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-    def test_converge_dummy(self):
+    def test_converge_dummy(self) -> None:
         # Ensure minGPT-TS converges on dummy timeseries/state-action data
 
         # Create data
@@ -63,7 +63,7 @@ class MinGPTTests(unittest.TestCase):
         # train eval, which is only ever done once
         with torch.no_grad():
             train_score = eval_split(model, self.device, train_dataset)
-        print(f"minGPT train results: {train_score}")
+        print(f"minGPT dummy train results: {train_score}")
         self.assertLessEqual(train_score, 0.0005)
 
         val_passed = False
@@ -77,7 +77,7 @@ class MinGPTTests(unittest.TestCase):
                     break
                 else:
                     val_dataset = FloatDataset('val')  # do it down here, since already created one first time
-        print(f"minGPT val results: {val_results}")
+        print(f"minGPT dummy val results: {val_results}")
         self.assertTrue(val_passed)
 
         test_passed = False
@@ -91,14 +91,14 @@ class MinGPTTests(unittest.TestCase):
                 if test_score < 0.0005:
                     test_passed = True
                     break
-        print(f"minGPT test results: {test_results}")
+        print(f"minGPT dummy test results: {test_results}")
         self.assertTrue(test_passed)
 
         # and to check on an individual example
         single_dataset = FloatDataset('test')
         self.loop_random_single_example_eval(model, single_dataset, 0.0005, 'dummy')
 
-    def test_converge_lunar(self):
+    def test_converge_lunar(self) -> None:
         # create lunar environment
         env = gym.make("LunarLander-v2")
         obs, info = env.reset()
@@ -134,7 +134,7 @@ class MinGPTTests(unittest.TestCase):
         # train eval, which is only ever done once
         with torch.no_grad():
             train_score = eval_split(model, self.device, train_lunar_dataset)
-        print(f"minGPT train results: {train_score}")
+        print(f"minGPT lunar train results: {train_score}")
         self.assertLessEqual(train_score, 0.001)
 
         val_passed = False
@@ -149,7 +149,7 @@ class MinGPTTests(unittest.TestCase):
                 else:
                     val_lunar_data_arr = get_random_episode_transitions(env, 100, 10, self.device)
                     val_lunar_dataset = LunarDataset(val_lunar_data_arr)
-        print(f"minGPT val results: {val_results}")
+        print(f"minGPT lunar val results: {val_results}")
         self.assertTrue(val_passed)
 
         test_passed = False
@@ -164,7 +164,7 @@ class MinGPTTests(unittest.TestCase):
                 if test_score < 0.003:
                     test_passed = True
                     break
-        print(f"minGPT test results: {val_results}")
+        print(f"minGPT lunar test results: {val_results}")
         self.assertTrue(test_passed)
 
         # and to check on an individual example

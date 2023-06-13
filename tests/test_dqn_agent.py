@@ -4,6 +4,7 @@ import numpy as np
 import gymnasium as gym
 
 from agents.dqn_agent import DQNAgent
+from agents.dqn_multimodal_agent import MultimodalDQNAgent
 from environments.grid_world_env import GridWorldEnv
 
 
@@ -39,10 +40,10 @@ class DQNAgentTests(unittest.TestCase):
         self.assertTrue(has_converged)
         self.assertTrue(eval_passed)
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.cartpole_env = gym.make("CartPole-v1")
 
-    def test_select_action(self):
+    def test_select_action(self) -> None:
         agent = DQNAgent(self.cartpole_env)
         observation, _ = self.cartpole_env.reset()
         n_observations = len(observation)
@@ -54,7 +55,7 @@ class DQNAgentTests(unittest.TestCase):
             self.assertGreaterEqual(action, 0)
             self.assertLess(action, agent.env.action_space.n)
 
-    def test_select_action_with_eps(self):
+    def test_select_action_with_eps(self) -> None:
         agent = DQNAgent(self.cartpole_env)
         observation, _ = self.cartpole_env.reset()
         n_observations = len(observation)
@@ -67,14 +68,14 @@ class DQNAgentTests(unittest.TestCase):
             self.assertGreaterEqual(action, 0)
             self.assertLess(action, agent.env.action_space.n)
 
-    def test_train(self):
+    def test_train(self) -> None:
         agent = DQNAgent(self.cartpole_env)
         epochs = 3
         episode_rewards = agent.train(epochs)
         self.assertIsInstance(episode_rewards, list)
         self.assertEqual(len(episode_rewards), epochs)
 
-    def test_eval(self):
+    def test_eval(self) -> None:
         agent = DQNAgent(self.cartpole_env)
         num_episodes = 10
         episode_rewards = agent.eval(num_episodes)
@@ -83,7 +84,7 @@ class DQNAgentTests(unittest.TestCase):
         for reward in episode_rewards:
             self.assertIsInstance(reward, (int, float))
 
-    def test_investigate_model_outputs(self):
+    def test_investigate_model_outputs(self) -> None:
         agent = DQNAgent(self.cartpole_env)
         observation, _ = self.cartpole_env.reset()
         n_observations = len(observation)
@@ -92,7 +93,7 @@ class DQNAgentTests(unittest.TestCase):
         self.assertIsInstance(outputs, np.ndarray)
         self.assertEqual(outputs.shape, (agent.env.action_space.n,))
 
-    def test_train_and_eval_cartpole(self):
+    def test_train_and_eval_cartpole(self) -> None:
         # Tests to see if model can converge on cartpole
         # From the docs: "Training RL agents can be a noisy process, so restarting training can produce better
         # results if convergence is not observed."
@@ -104,7 +105,7 @@ class DQNAgentTests(unittest.TestCase):
                                  name_string="fc cartpole",
                                  train_epochs=2500, train_loops=3, eval_loops=3)
 
-    def test_train_and_eval_lunar(self):
+    def test_train_and_eval_lunar(self) -> None:
         # Tests to see if model can converge on lunar
         lunar_env = gym.make("LunarLander-v2")
         agent = DQNAgent(lunar_env)
@@ -112,7 +113,7 @@ class DQNAgentTests(unittest.TestCase):
                                  name_string="fc lunar",
                                  train_epochs=2500, train_loops=3, eval_loops=3)
 
-    def test_train_and_eval_gridnone_fc(self):
+    def test_train_and_eval_gridnone_fc(self) -> None:
         # Tests to see if model can converge on grid world without any obstacles
         grid_env = GridWorldEnv(size=5, obs_type="flat", max_episode_length=20, num_obstacles=0)
         # lr of 1e-2 experimentally found to be good
@@ -121,26 +122,33 @@ class DQNAgentTests(unittest.TestCase):
                                  name_string="fc gridnone",
                                  train_epochs=2500, train_loops=3, eval_loops=3)
 
-    def test_train_and_eval_gridnone_resnet(self):
+    def test_train_and_eval_gridnone_resnet(self) -> None:
         grid_env = GridWorldEnv(size=5, obs_type="img", max_episode_length=20, num_obstacles=0)
         agent = DQNAgent(grid_env, lr=1e-2, model_type="resnet", eps_decay=1250)
         self.loop_train_and_eval(agent, early_stopping_rounds=100, early_stopping_threshold=7.5, eval_threshold=6.0,
                                  name_string="resnet gridnone",
                                  train_epochs=2500, train_loops=3, eval_loops=3)
 
-    def test_train_and_eval_gridone_resnet(self):
+    def test_train_and_eval_gridone_resnet(self) -> None:
         grid_env = GridWorldEnv(size=5, obs_type="img", max_episode_length=20, num_obstacles=1)
         agent = DQNAgent(grid_env, lr=5e-3, model_type="resnet", eps_decay=1500)
         self.loop_train_and_eval(agent, early_stopping_rounds=100, early_stopping_threshold=5.75, eval_threshold=3.5,
                                  name_string="resnet gridone",
                                  train_epochs=2500, train_loops=3, eval_loops=3)
 
-    def test_train_and_eval_gridtwo_resnet(self):
+    def test_train_and_eval_gridtwo_resnet(self) -> None:
         grid_env = GridWorldEnv(size=5, obs_type="img", max_episode_length=20, num_obstacles=2)
         agent = DQNAgent(grid_env, lr=5e-3, model_type="resnet", eps_decay=2000)
         self.loop_train_and_eval(agent, early_stopping_rounds=100, early_stopping_threshold=5.5, eval_threshold=2.0,
                                  name_string="resnet gridtwo",
                                  train_epochs=3000, train_loops=3, eval_loops=5)
+
+    def test_train_and_eval_gridnone_multi_resnet(self) -> None:
+        grid_env = GridWorldEnv(size=5, obs_type="multiimg", max_episode_length=20, num_obstacles=0)
+        agent = MultimodalDQNAgent(grid_env, lr=1e-2, model_type="multires", eps_decay=1250)
+        self.loop_train_and_eval(agent, early_stopping_rounds=100, early_stopping_threshold=7.5, eval_threshold=6.0,
+                                 name_string="resnet gridnone",
+                                 train_epochs=2500, train_loops=3, eval_loops=3)
 
 
 if __name__ == '__main__':

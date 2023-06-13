@@ -6,18 +6,18 @@ from environments.grid_world_env import GridWorldEnv
 
 
 class GridWorldEnvTest(unittest.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.env = GridWorldEnv(render_mode=None)
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         self.env.close()
 
-    def test_reset(self):
+    def test_reset(self) -> None:
         obs, info = self.env.reset()
         self.assertEqual(obs.shape, (self.env.size * self.env.size * 3,))
         self.assertIsInstance(info, dict)
 
-    def test_step(self):
+    def test_step(self) -> None:
         # reset is assumed to be called before steps taken
         _, _ = self.env.reset()
         action = self.env.action_space.sample()
@@ -27,16 +27,16 @@ class GridWorldEnvTest(unittest.TestCase):
         self.assertIsInstance(terminated, bool)
         self.assertIsInstance(next_info, dict)
 
-    def test_render(self):
+    def test_render(self) -> None:
         env = GridWorldEnv(render_mode="rgb_array")
         env.reset()
         rgb_array = env.render()
         self.assertEqual(rgb_array.shape, (self.env.window_size, self.env.window_size, 3))
 
-    def test_close(self):
+    def test_close(self) -> None:
         self.env.close()
 
-    def test_observation_types(self):
+    def test_observation_types(self) -> None:
         obs_types = ["flat", "img", "dict"]
         for obs_type in obs_types:
             with self.subTest(obs_type=obs_type):
@@ -65,7 +65,7 @@ class GridWorldEnvTest(unittest.TestCase):
 
                 env.close()
 
-    def test_random_obstacle_addition(self):
+    def test_random_obstacle_addition(self) -> None:
         _, _ = self.env.reset()
         self.env.add_random_obstacles(2)
         self.assertEqual(len(self.env._obstacles), 2)

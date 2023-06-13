@@ -5,7 +5,7 @@ from buffers.ppo_buffer import Buffer
 
 class BufferTests(unittest.TestCase):
 
-    def test_store(self):
+    def test_store(self) -> None:
         buffer = Buffer(observation_dimensions=4, size=10)
         observation = np.array([1, 2, 3, 4], dtype=np.float32)
         action = 2
@@ -22,7 +22,7 @@ class BufferTests(unittest.TestCase):
         # note, for some reason have to check almost equals here, floating point precision on -0.1?
         self.assertAlmostEqual(buffer.logprobability_buffer[0], logprobability, places=7)
 
-    def test_finish_trajectory(self):
+    def test_finish_trajectory(self) -> None:
         buffer = Buffer(observation_dimensions=4, size=10)
         buffer.pointer = 5
         buffer.trajectory_start_index = 2
@@ -36,7 +36,7 @@ class BufferTests(unittest.TestCase):
         self.assertTrue(np.allclose(buffer.advantage_buffer[2:7], expected_advantage, atol=1e-7))
         self.assertTrue(np.allclose(buffer.return_buffer[2:7], expected_return, atol=1e-7))
 
-    def test_get(self):
+    def test_get(self) -> None:
         buffer = Buffer(observation_dimensions=4, size=10)
         initial_advantage = np.array([0.2, 0.25, 0.3, 0.35])
         buffer.advantage_buffer = np.array([0.2, 0.25, 0.3, 0.35])
