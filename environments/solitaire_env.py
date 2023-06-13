@@ -114,6 +114,8 @@ class SolitaireWorldEnv(gym.Env):
         # return (sum_hand(self.player), self.dealer[0], usable_ace(self.player))
         elif self.obs_type == "img":
             return self._get_img_obs()
+        elif self.obs_type == "multiimg":
+            return self._get_multi_img_obs()
         else:
             return {
                 "deck_position": self.deck_position,
@@ -124,6 +126,14 @@ class SolitaireWorldEnv(gym.Env):
                 "piles_behind": self.pile_behind_cards_known,
                 "piles_behind_actual": self.pile_behind_cards
             }
+
+    # TODO: figure out how to return two reasonable images
+    def _get_multi_img_obs(self):
+        total_img = self._get_img_obs()
+        return {
+            "imgone": total_img[:, :-6, :],
+            "imgtwo": total_img[:, -6:, :]
+        }
 
     def _get_img_obs(self):
         deck_num = self.deck_position
@@ -462,6 +472,19 @@ class SolitaireWorldEnv(gym.Env):
         # self.suit_cards[3] = 3
 
         #NOTE: SHOULD try to MAKE THIS MORE EFFICIENT
+        # possible improvement:
+        # self.pile_cards = np.zeros((13, 7), dtype=np.int8)
+        # self.pile_behind_cards_known = np.zeros((6, 7), dtype=np.int8)
+        # self.pile_behind_cards = np.zeros((6, 7), dtype=np.int8)
+        # card_index = 24
+        #
+        # self.pile_cards[0, :7] = shuffled_deck[card_index:card_index+7]
+        # card_index += 7
+        #
+        # for i in range(7):
+        #     self.pile_behind_cards_known[:i, i] = 53
+        #     self.pile_behind_cards[:i, i] = shuffled_deck[card_index:card_index+i]
+        #     card_index += i
         self.pile_cards = np.zeros((13,7), dtype=np.int8)
         self.pile_behind_cards_known = np.zeros((6,7), dtype=np.int8)
         self.pile_behind_cards = np.zeros((6,7), dtype=np.int8)

@@ -33,7 +33,8 @@ confirm that the code for training models in new environments is the same code t
 along with other tests to ensure that it should run properly in new environments (given proper setup for the 
 new environment). It also demonstrates a proof of concept for Deep RL Algorithms and their models for MLOps.
 
-To be specific, looking at the Google MLOps Cloud Architecture page for MLOps level 2 (CI/CD pipeline automation)
+To be specific, looking at the 
+[Google MLOps Cloud Architecture page for MLOps level 2 (CI/CD pipeline automation)](https://cloud.google.com/architecture/mlops-continuous-delivery-and-automation-pipelines-in-machine-learning)
 this proof of concept would cover the "CI: Build, test & package pipeline components" part, shown here:
 
 ![Continuous Integration Workflow](images/ci-pipeline-google.PNG)
@@ -114,7 +115,8 @@ needs to be (empirically) tested.
 
 ## The Algorithm
 
-Tree-based search, similar to MuZero with decoder-only GPT-2 time series transformer for models
+Tree-based search, similar to [MuZero](https://arxiv.org/abs/1911.08265) with decoder-only GPT-2 time series 
+transformer for models
 
 The general idea for the algorithm is as follows:
 

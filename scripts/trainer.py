@@ -33,9 +33,12 @@ def train_agent(env_name, agent_name, num_epochs):
         env = GridWorldEnv(num_obstacles=2, obs_type="img")
         early_stopping_threshold = 6.0
         dqn_lr = 1e-2
-    elif env_name == "solitaire":
+    elif env_name == "solitaireimg":
         env = SolitaireWorldEnv(obs_type="img")
-        early_stopping_threshold = 9999.99
+        early_stopping_threshold = 500.0
+    elif env_name == "solitairemulti":
+        env = SolitaireWorldEnv(obs_type="multiimg")
+        early_stopping_threshold = 500.0
     else:
         print(f"No envs with name: {str(env_name)} found, exiting...")
         return
@@ -61,8 +64,8 @@ def train_agent(env_name, agent_name, num_epochs):
     epoch_rewards = agent.train(num_epochs,
                                 early_stopping_rounds=early_stopping_rounds,
                                 early_stopping_threshold=early_stopping_threshold,
-                                show_progress=True,
-                                print_progress=False)
+                                show_progress=False,
+                                print_progress=True)
 
     print("training complete")
 
