@@ -33,7 +33,8 @@ class Agent:
 
         raise NotImplementedError("Agents must implement the select_action method")
 
-    def train(self, epochs: int, early_stopping_rounds: int, early_stopping_threshold: float, show_progress: bool = False) -> list:
+    def train(self, epochs: int, early_stopping_rounds: int, early_stopping_threshold: float,
+              show_progress: bool = False, print_progress: bool = False, save_checkpoints: int = 0) -> list:
         """Trains the agent
 
         Args:
@@ -41,6 +42,8 @@ class Agent:
             early_stopping_rounds (int): Exits training if amount of last reward rounds above threshold
             early_stopping_threshold (float): Value which is considered (sometimes nearly) solved
             show_progress (bool): Whether to display any output for training progress.
+            print_progress (bool): Whether to print the actual outputs (and other episode info...)
+            save_checkpoints (bool): Whether/how often per num epochs to save a model checkpoint
 
         Returns:
             list: List of average scores per episode for the epochs

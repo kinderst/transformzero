@@ -83,7 +83,7 @@ class DQNAgent(Agent):
                 return int(self.env.action_space.sample())
 
     def train(self, epochs: int, early_stopping_rounds: int = -1, early_stopping_threshold: float = 200.0,
-              show_progress: bool = False, print_progress: int = 0) -> list:
+              show_progress: bool = False, print_progress: int = 0, save_checkpoints: bool = False) -> list:
         steps_done = 0
         epoch_rewards = []
         for i_episode in range(epochs):
@@ -140,7 +140,7 @@ class DQNAgent(Agent):
                     if print_progress:
                         if i_episode % print_progress == 0:
                             print(f"episode: {i_episode}, reward: {total_reward}, eps: {current_eps}")
-                    if i_episode % 50 == 0:
+                    if i_episode % save_checkpoints == 0 and save_checkpoints > 0:
                         self.save_model("current_dqn_training")
                     break
             # for testing only!
