@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 
 from models.dqn_resnet_model import ResNet
+from models.min_gpt import NewGELU
 
 
 class SpatialAttention(nn.Module):
@@ -23,7 +24,8 @@ class ChannelAttention(nn.Module):
         self.avg_pool = nn.AdaptiveAvgPool2d(1)
         self.max_pool = nn.AdaptiveMaxPool2d(1)
         self.fc1 = nn.Conv2d(channels, channels // reduction, kernel_size=1)
-        self.relu = nn.ReLU(inplace=True)
+        # self.relu = nn.ReLU(inplace=True)
+        self.relu = NewGELU()
         self.fc2 = nn.Conv2d(channels // reduction, channels, kernel_size=1)
         self.sigmoid = nn.Sigmoid()
 
@@ -40,7 +42,8 @@ class ResidualBlock(nn.Module):
         super(ResidualBlock, self).__init__()
         self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(out_channels)
-        self.relu = nn.ReLU(inplace=True)
+        # self.relu = nn.ReLU(inplace=True)
+        self.relu = NewGELU()
         self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(out_channels)
         self.spatial_attention = SpatialAttention(out_channels)
@@ -86,7 +89,8 @@ class MultimodalCNN(nn.Module):
         num_between = ((len(self.modalities) * num_actions) + num_actions) // 2
         self.fc1 = nn.Linear(len(self.modalities) * num_actions, num_between)
         self.layer_norm2 = nn.LayerNorm(num_between)
-        self.relu = nn.ReLU()
+        # self.relu = nn.ReLU()
+        self.gelu = NewGELU()
         self.dropout = nn.Dropout(p=dropout_rate)
         self.fc2 = nn.Linear(num_between, num_actions)
 
@@ -103,7 +107,98 @@ class MultimodalCNN(nn.Module):
         normalized_features1 = self.layer_norm1(combined_features)
         x = self.fc1(normalized_features1)
         normalized_features2 = self.layer_norm2(x)
-        x = self.relu(normalized_features2)
+        # x = self.relu(normalized_features2)
+        x = self.gelu(normalized_features2)
+        x = self.dropout(x)
+        x = self.fc2(x)
+        return x
+
+
+class FCModule(nn.Module):
+    def __init__(self, input_size, hidden_sizes, output_size):
+        super(FCModule, self).__init__()
+        layers = []
+        prev_size = input_size[0]  # because passing a tuple i.e. (25,)
+        for size in hidden_sizes:
+            size = size[0]  # because it some reason converts to [np.array([14], dtype=int32)] ?
+            layers.append(nn.LayerNorm(prev_size))
+            layers.append(nn.Linear(prev_size, size))
+            layers.append(NewGELU())
+            prev_size = size
+        layers.append(nn.Linear(prev_size, output_size))
+        self.layers = nn.Sequential(*layers)
+
+    def forward(self, x):
+        return self.layers(x)
+
+
+class MultimodalResnetAndFC(nn.Module):
+    def __init__(self, num_layers, input_shapes, num_actions, dropout_rate=0.1):
+        super(MultimodalResnetAndFC, self).__init__()
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        self.img_modalities = [modality for modality in input_shapes.keys() if modality.startswith("img")]
+        print("num img modalities: ", len(self.img_modalities))
+        self.flat_modalities = [modality for modality in input_shapes.keys() if modality.startswith("flat")]
+        print("num flat modalities: ", len(self.flat_modalities))
+        # Image modalities
+        self.img_cnns = nn.ModuleDict({
+            modality: ResNet(num_layers, input_shapes[modality], num_actions)
+            for modality in self.img_modalities
+        })
+
+        # Flat data modalities
+        self.flat_fc_layers = nn.ModuleDict({
+            modality: FCModule(
+                input_shapes[modality],
+                [(input_shapes[modality] + num_actions) // 2],
+                num_actions
+            )
+            for modality in self.flat_modalities
+        })
+
+        # Fusion layers
+        fusion_input_size = (len(self.img_modalities) + len(self.flat_modalities)) * num_actions
+        self.layer_norm1 = nn.LayerNorm(fusion_input_size)
+        num_between = (fusion_input_size + num_actions) // 2
+        self.fc1 = nn.Linear(fusion_input_size, num_between)
+        self.layer_norm2 = nn.LayerNorm(num_between)
+        self.gelu = NewGELU()
+        self.dropout = nn.Dropout(p=dropout_rate)
+        self.fc2 = nn.Linear(num_between, num_actions)
+
+    def forward(self, state_batch):
+        img_tensor_batch = {
+            modality: torch.cat([
+                torch.tensor(sample[modality], device=self.device, dtype=torch.float32).unsqueeze(0)
+                for sample in state_batch
+            ])
+            for modality in self.img_modalities
+        }
+
+        flat_tensor_batch = {
+            modality: torch.cat([
+                torch.tensor(sample[modality], device=self.device, dtype=torch.float32).unsqueeze(0)
+                for sample in state_batch
+            ])
+            for modality in self.flat_modalities
+        }
+
+        img_features = []
+        for modality in self.img_modalities:
+            cnn_output = self.img_cnns[modality](img_tensor_batch[modality])
+            img_features.append(cnn_output)
+
+        flat_features = []
+        for modality in self.flat_modalities:
+            fc_output = self.flat_fc_layers[modality](flat_tensor_batch[modality])
+            flat_features.append(fc_output)
+
+        combined_features = torch.cat(img_features + flat_features, dim=1)
+        normalized_features1 = self.layer_norm1(combined_features)
+        x = self.fc1(normalized_features1)
+        normalized_features2 = self.layer_norm2(x)
+        x = self.gelu(normalized_features2)
         x = self.dropout(x)
         x = self.fc2(x)
         return x

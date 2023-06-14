@@ -130,9 +130,20 @@ class SolitaireWorldEnv(gym.Env):
     # TODO: figure out how to return two reasonable images
     def _get_multi_img_obs(self):
         total_img = self._get_img_obs()
+        # Select the first 3 rows
+        deck_rows = total_img[:, :3, :].reshape(-1, 7, 3)
+
+        # Select the first 3 columns of the 4th row
+        top_deck_columns = total_img[:, 3, :3]
+
+        # Create the (3, 8, 3) array by stacking the selected rows and columns
+        img_deck = np.concatenate((np.expand_dims(top_deck_columns, axis=1), deck_rows), axis=1)
+
         return {
-            "imgone": total_img[:, :-6, :],
-            "imgtwo": total_img[:, -6:, :]
+            "imgdeck": img_deck,
+            "flatsuits": self.suit_cards / 13,
+            "imgpiles": total_img[:, 4:-6, :],
+            "flatbehind": total_img[:, -6:, :]
         }
 
     def _get_img_obs(self):

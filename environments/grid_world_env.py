@@ -81,7 +81,8 @@ class GridWorldEnv(gym.Env):
         elif self.obs_type == "img":
             return self._get_img_obs()
         elif self.obs_type == "multiimg":
-            return self._get_multi_img_obs()
+            # return self._get_multi_img_obs()
+            return self._get_multi_modal_obs()
         else:
             return {
                 "agent": self._agent_location,
@@ -110,6 +111,15 @@ class GridWorldEnv(gym.Env):
         obstacle_plane = self._get_obstacle_matrix()
         # Stack to 3D obs
         return np.stack((agent_plane, target_plane, obstacle_plane))
+
+    def _get_multi_modal_obs(self):
+        img_obs = self._get_img_obs()
+        return {
+            "imgone": img_obs,
+            "imgtwo": img_obs,
+            "flatone": img_obs[0, :, :].flatten(),
+            "flattwo": img_obs[1, :, :].flatten()
+        }
 
     def _get_multi_img_obs(self):
         img_obs = self._get_img_obs()

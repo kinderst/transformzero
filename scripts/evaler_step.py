@@ -23,7 +23,7 @@ def eval_step_episode(env_name, agent_name, weights_path):
     elif env_name == "solitaire":
         env = SolitaireWorldEnv(obs_type="img")
     elif env_name == "solitairemulti":
-        env = SolitaireWorldEnv(obs_type="multiimg")
+        env = SolitaireWorldEnv(render_mode="human", obs_type="multiimg")
     else:
         print('err bad env name')
         return
@@ -55,9 +55,9 @@ def eval_step_episode(env_name, agent_name, weights_path):
         action_mask = info['action_mask'] if 'action_mask' in info else None
         print("action mask: ", action_mask)
 
-        # print("observation is: ", observation)
+        print("observation is: ", observation)
         model_outputs = agent.investigate_model_outputs(observation)
-        print("model outputs: ", model_outputs)
+        # print("model outputs: ", model_outputs)
 
         action = agent.select_action(observation, action_mask)
         print("action taken: ", action)

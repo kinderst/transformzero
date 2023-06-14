@@ -120,35 +120,35 @@ class DQNAgentTests(unittest.TestCase):
         agent = DQNAgent(grid_env, lr=1e-2, model_type="fc")
         self.loop_train_and_eval(agent, early_stopping_rounds=100, early_stopping_threshold=7.5, eval_threshold=6.0,
                                  name_string="fc gridnone",
-                                 train_epochs=2500, train_loops=3, eval_loops=3)
+                                 train_epochs=2500, train_loops=3, eval_loops=7)
 
     def test_train_and_eval_gridnone_resnet(self) -> None:
         grid_env = GridWorldEnv(size=5, obs_type="img", max_episode_length=20, num_obstacles=0)
         agent = DQNAgent(grid_env, lr=1e-2, model_type="resnet", eps_decay=1250)
         self.loop_train_and_eval(agent, early_stopping_rounds=100, early_stopping_threshold=7.5, eval_threshold=6.0,
                                  name_string="resnet gridnone",
-                                 train_epochs=2500, train_loops=3, eval_loops=3)
+                                 train_epochs=2500, train_loops=3, eval_loops=7)
 
     def test_train_and_eval_gridone_resnet(self) -> None:
         grid_env = GridWorldEnv(size=5, obs_type="img", max_episode_length=20, num_obstacles=1)
         agent = DQNAgent(grid_env, lr=5e-3, model_type="resnet", eps_decay=1500)
         self.loop_train_and_eval(agent, early_stopping_rounds=100, early_stopping_threshold=5.75, eval_threshold=3.25,
                                  name_string="resnet gridone",
-                                 train_epochs=2500, train_loops=3, eval_loops=5)
+                                 train_epochs=2500, train_loops=3, eval_loops=7)
 
     def test_train_and_eval_gridtwo_resnet(self) -> None:
         grid_env = GridWorldEnv(size=5, obs_type="img", max_episode_length=20, num_obstacles=2)
         agent = DQNAgent(grid_env, lr=5e-3, model_type="resnet", eps_decay=2000)
         self.loop_train_and_eval(agent, early_stopping_rounds=100, early_stopping_threshold=5.5, eval_threshold=2.0,
                                  name_string="resnet gridtwo",
-                                 train_epochs=3000, train_loops=3, eval_loops=5)
+                                 train_epochs=3000, train_loops=3, eval_loops=7)
 
     def test_train_and_eval_gridnone_multi_resnet(self) -> None:
         grid_env = GridWorldEnv(size=5, obs_type="multiimg", max_episode_length=20, num_obstacles=0)
         agent = MultimodalDQNAgent(grid_env, lr=1e-2, model_type="multires", eps_decay=1250)
         self.loop_train_and_eval(agent, early_stopping_rounds=100, early_stopping_threshold=7.5, eval_threshold=6.0,
                                  name_string="multiresnet gridnone",
-                                 train_epochs=1500, train_loops=3, eval_loops=5)
+                                 train_epochs=1500, train_loops=3, eval_loops=7)
 
 
 if __name__ == '__main__':
