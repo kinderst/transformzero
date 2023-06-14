@@ -76,13 +76,19 @@ class ResidualBlock(nn.Module):
 
 
 class MultimodalCNN(nn.Module):
-    def __init__(self, num_layers, input_shapes, num_actions):
+    def __init__(self, num_layers, input_shapes, num_actions, dropout_rate=0.2):
         super(MultimodalCNN, self).__init__()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.modalities = list(input_shapes.keys())
         self.cnns = nn.ModuleDict({modality: ResNet(num_layers, input_shapes[modality], num_actions) for modality in self.modalities})
-        self.layer_norm = nn.LayerNorm(len(self.modalities) * num_actions)
-        self.fc = nn.Linear(len(self.modalities) * num_actions, num_actions)
+        self.layer_norm1 = nn.LayerNorm(len(self.modalities) * num_actions)
+        # ((len(self.modalities) * num_actions) + num_actions) // 2 attempt to step neurons down proportionally
+        num_between = ((len(self.modalities) * num_actions) + num_actions) // 2
+        self.fc1 = nn.Linear(len(self.modalities) * num_actions, num_between)
+        self.relu = nn.ReLU()
+        self.dropout = nn.Dropout(p=dropout_rate)
+        self.layer_norm2 = nn.LayerNorm(num_between)
+        self.fc2 = nn.Linear(num_between, num_actions)
 
     def forward(self, state_batch):
         tensor_batch = {modality: torch.cat([torch.tensor(sample[modality], device=self.device, dtype=torch.float32).unsqueeze(0)
@@ -94,6 +100,10 @@ class MultimodalCNN(nn.Module):
             features.append(cnn_output)
 
         combined_features = torch.cat(features, dim=1)
-        normalized_features = self.layer_norm(combined_features)
-        x = self.fc(normalized_features)
+        normalized_features1 = self.layer_norm1(combined_features)
+        x = self.fc1(normalized_features1)
+        x = self.relu(x)
+        x = self.dropout(x)
+        normalized_features2 = self.layer_norm2(x)
+        x = self.fc2(normalized_features2)
         return x

@@ -72,8 +72,9 @@ def train_agent(env_name, agent_name, num_epochs):
     epoch_rewards = agent.train(num_epochs,
                                 early_stopping_rounds=early_stopping_rounds,
                                 early_stopping_threshold=early_stopping_threshold,
-                                show_progress=False,
-                                print_progress=True)
+                                show_progress=True,
+                                print_progress=False,
+                                save_checkpoints=0)
 
     print("training complete")
 
