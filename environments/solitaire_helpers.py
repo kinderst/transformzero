@@ -166,6 +166,9 @@ def pile_to_suit_check(pile_cards_param, suit_cards_param, pile_i):
 # check that agent can move some card index (and all the cards below it) to
 # another pile
 # index 0 is lowest card
+# TODO: consider removing ability to move ace, again when would you ever move ace pile to pile?
+# the reason this is happening is because yes a card can be at index 0 in the pile and not be
+# an ace, for example on reset every card spawns. We need to do a
 def pile_to_pile_check(pile_cards_param, pile_i, pile_to_move_to_j, card_k, highest_nonzero_pile_i):
     # check current pile is not empty
     if highest_nonzero_pile_i > -1:
@@ -173,6 +176,7 @@ def pile_to_pile_check(pile_cards_param, pile_i, pile_to_move_to_j, card_k, high
         # of cards below the top one you want to move
         # i.e. if the pile is ace,2,3,4, and card_k=7, that is out of bounds
         # max would be card_k = 3, which would move ace. card_k = 0 moves card 4
+        # BELOW MAYBE DIFFERENT? where do I see 12?
         # only 12 actions because in k,q,j,10,9,8,7,6,5,4,3,2,ace, it would only
         # ever make sense to go down to the 2 and move that, otherwise
         # send the ace to the suits
@@ -185,6 +189,9 @@ def pile_to_pile_check(pile_cards_param, pile_i, pile_to_move_to_j, card_k, high
             # get the current top card trying to move's suit and num
             c_suit_and_num = get_suit_and_num(pile_cards_param[index_to_move,pile_i])
 
+            if c_suit_and_num[1] == 1:
+                return False
+
             # if the current card we want to move is a king, check the target pile is empty
             if c_suit_and_num[1] == 13:
                 if not pile_cards_param[:,pile_to_move_to_j].any():
@@ -194,7 +201,7 @@ def pile_to_pile_check(pile_cards_param, pile_i, pile_to_move_to_j, card_k, high
                 # card at index 0, and that it is one lower and different suit than current
                 if pile_cards_param[0,pile_to_move_to_j] > 0:
                     t_suit_and_num = get_suit_and_num(pile_cards_param[0,pile_to_move_to_j])
-                    #check diff suit and one higher
+                    # check diff suit and one higher
                     if ((c_suit_and_num[0] <= 1 and t_suit_and_num[0] >= 2) or (c_suit_and_num[0] >= 2 and t_suit_and_num[0] <= 1)) and (c_suit_and_num[1] + 1 == t_suit_and_num[1]):
                         return True
 

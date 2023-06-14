@@ -138,12 +138,11 @@ class SolitaireWorldEnv(gym.Env):
 
         # Create the (3, 8, 3) array by stacking the selected rows and columns
         img_deck = np.concatenate((np.expand_dims(top_deck_columns, axis=1), deck_rows), axis=1)
-
         return {
             "imgdeck": img_deck,
             "flatsuits": self.suit_cards / 13,
-            "imgpiles": total_img[:, 4:-6, :],
-            "flatbehind": total_img[:, -6:, :]
+            "imgpiles": total_img[:-1, 4:-6, :],  # -1 because don't need unknown channel
+            "flatbehind": np.sum(self.pile_behind_cards_known != 0, axis=0) / 6
         }
 
     def _get_img_obs(self):

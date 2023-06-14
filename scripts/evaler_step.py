@@ -57,7 +57,7 @@ def eval_step_episode(env_name, agent_name, weights_path):
 
         print("observation is: ", observation)
         model_outputs = agent.investigate_model_outputs(observation)
-        # print("model outputs: ", model_outputs)
+        print("model outputs: ", model_outputs)
 
         action = agent.select_action(observation, action_mask)
         print("action taken: ", action)

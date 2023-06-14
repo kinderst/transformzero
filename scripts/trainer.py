@@ -44,7 +44,7 @@ def train_agent(env_name, agent_name, num_epochs):
         dqn_eps_decay = 5000
     elif env_name == "solitairemulti":
         env = SolitaireWorldEnv(obs_type="multiimg")
-        early_stopping_threshold = 500.0
+        early_stopping_threshold = 50.0
         dqn_lr = 5e-7
         dqn_eps_decay = 5000
     else:
@@ -53,10 +53,10 @@ def train_agent(env_name, agent_name, num_epochs):
 
     # Initialize agent
     if agent_name == "dqn":
-        agent = DQNAgent(env, lr=dqn_lr, model_type="resnet", eps_decay=dqn_eps_decay, eps_end=0.05, gamma=0.99)
+        agent = DQNAgent(env, lr=dqn_lr, model_type="resnet", eps_decay=dqn_eps_decay, eps_end=0.1, gamma=0.7)
         early_stopping_rounds = 50
     elif agent_name == "multidqn":
-        agent = MultimodalDQNAgent(env, lr=dqn_lr, model_type="multires", eps_decay=dqn_eps_decay, eps_end=0.05, gamma=0.99)
+        agent = MultimodalDQNAgent(env, lr=dqn_lr, model_type="multires", eps_decay=dqn_eps_decay, eps_end=0.1, gamma=0.7)
         early_stopping_rounds = 50
     elif agent_name == "ppo":
         agent = PPOAgent(env)
@@ -72,9 +72,9 @@ def train_agent(env_name, agent_name, num_epochs):
     epoch_rewards = agent.train(num_epochs,
                                 early_stopping_rounds=early_stopping_rounds,
                                 early_stopping_threshold=early_stopping_threshold,
-                                show_progress=True,
-                                print_progress=False,
-                                save_checkpoints=0)
+                                show_progress=False,
+                                print_progress=True,
+                                save_checkpoints=50)
 
     print("training complete")
 
