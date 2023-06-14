@@ -17,6 +17,7 @@ class MultimodalDQNAgent(DQNAgent):
         self.modalities = obs.keys()
 
     def select_action_with_eps(self, obs: dict, eps_threshold, action_mask=None) -> int:
+        self.policy_net.eval()
         sample = random.random()
         if sample > eps_threshold:
             # obs_one = torch.tensor(obs['imgone'], dtype=torch.float32, device=self.device).unsqueeze(0)
@@ -41,6 +42,9 @@ class MultimodalDQNAgent(DQNAgent):
     def optimize_model(self) -> None:
         if len(self.memory) < self.batch_size:
             return
+
+        self.policy_net.train()
+
         transitions = self.memory.sample(self.batch_size)
         batch = self.Transition(*zip(*transitions))
 

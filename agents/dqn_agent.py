@@ -51,6 +51,7 @@ class DQNAgent(Agent):
             self.policy_net = MultimodalCNN(2, input_shapes, n_actions).to(self.device)
             self.target_net = MultimodalCNN(2, input_shapes, n_actions).to(self.device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
+        self.target_net.eval()
         self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=lr, amsgrad=True)
 
         # replay memory
@@ -59,9 +60,11 @@ class DQNAgent(Agent):
         self.memory = ReplayMemory(replay_mem_size, self.Transition, self.device)
 
     def select_action(self, obs, action_mask=None) -> int:
+        self.policy_net.eval()
         return int(self.select_action_with_eps(obs, self.eps_end, action_mask))
 
     def select_action_with_eps(self, obs: np.ndarray, eps_threshold, action_mask=None) -> int:
+        self.policy_net.eval()
         sample = random.random()
         if sample > eps_threshold:
             obs = torch.tensor(obs, dtype=torch.float32, device=self.device).unsqueeze(0)
@@ -146,6 +149,9 @@ class DQNAgent(Agent):
         return epoch_rewards
 
     def optimize_model(self) -> None:
+        # we train the policy net here
+        self.policy_net.train()
+
         if len(self.memory) < self.batch_size:
             return
         transitions = self.memory.sample(self.batch_size)
