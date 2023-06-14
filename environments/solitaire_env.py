@@ -250,10 +250,11 @@ class SolitaireWorldEnv(gym.Env):
         agent_reward_deck_to_pile = 5/10
         agent_reward_deck_to_suit = 15/10
         agent_reward_pile_to_suit = 10/10
+        agent_reward_pile_to_pile = -2.5/10
         agent_reward_pile_card_reveal = 5/10
         agent_reward_suit_to_pile = -17/10
-        agent_reward_deck_cycle = -2.5/10
-        agent_reward_deck_flip = -2.5/10
+        agent_reward_deck_cycle = -2/10
+        agent_reward_deck_flip = -2/10
         agent_reward_victory = 30/10
 
         # action 0 is tapping deck
@@ -433,6 +434,8 @@ class SolitaireWorldEnv(gym.Env):
                         self.pile_behind_cards_known[highest_nonzeros_piles_behind, pile_i] = 0
                         game_reward += game_score_pile_card_reveal
                         reward += agent_reward_pile_card_reveal
+                # for all pile to pile moves, give pile to pile reward (usually neg to prevent infinite back and forth)
+                reward += agent_reward_pile_to_pile
 
         self.game_episode_rewards += game_reward
         self.agent_episode_rewards += reward

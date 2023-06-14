@@ -23,7 +23,7 @@ def eval_step_episode(env_name, agent_name, weights_path):
     elif env_name == "solitaire":
         env = SolitaireWorldEnv(obs_type="img")
     elif env_name == "solitairemulti":
-        env = SolitaireWorldEnv(render_mode="human", obs_type="multiimg")
+        env = SolitaireWorldEnv(obs_type="multiimg")
     else:
         print('err bad env name')
         return

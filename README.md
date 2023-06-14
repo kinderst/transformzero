@@ -5,7 +5,10 @@ By Scott Kinder
 Usage:
 
 `git clone https://github.com/kinderst/transformzero.git`
+
 `cd transformzero`
+
+`pip install -r requirements.txt`
 
 To train:
 
