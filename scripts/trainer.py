@@ -14,6 +14,7 @@ from utils.plotting import plot_rewards
 def train_agent(env_name, agent_name, num_epochs):
     dqn_lr = 1e-4
     dqn_eps_decay = 1000
+    dqn_use_action_mask = False
 
     # Initialize environment
     if env_name == "cartpole":
@@ -42,22 +43,24 @@ def train_agent(env_name, agent_name, num_epochs):
         early_stopping_threshold = 500.0
         dqn_lr = 1e-6
         dqn_eps_decay = 5000
+        dqn_use_action_mask = True
     elif env_name == "solitairemulti":
         env = SolitaireWorldEnv(obs_type="multiimg")
         early_stopping_threshold = 50.0
-        dqn_lr = 1e-2
+        dqn_lr = 5e-3
         dqn_eps_decay = 10000
+        dqn_use_action_mask = True
     else:
         print(f"No envs with name: {str(env_name)} found, exiting...")
         return
 
     # Initialize agent
     if agent_name == "dqn":
-        agent = DQNAgent(env, lr=dqn_lr, model_type="resnet", eps_decay=dqn_eps_decay, eps_end=0.1, gamma=0.7)
+        agent = DQNAgent(env, lr=dqn_lr, model_type="resnet", eps_decay=dqn_eps_decay, eps_end=0.1, gamma=0.99)
         early_stopping_rounds = 50
     elif agent_name == "multidqn":
         agent = MultimodalDQNAgent(env, lr=dqn_lr, model_type="multires",
-                                   eps_decay=dqn_eps_decay, eps_end=0.1, gamma=0.6)
+                                   eps_decay=dqn_eps_decay, eps_end=0.1, gamma=0.99, use_action_mask=dqn_use_action_mask)
         early_stopping_rounds = 50
     elif agent_name == "ppo":
         agent = PPOAgent(env)

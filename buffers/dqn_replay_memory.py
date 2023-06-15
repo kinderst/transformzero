@@ -10,14 +10,14 @@ class ReplayMemory(object):
         self.Transition = transition_param
         self.device = device
 
-    def push(self, state, action, next_state, reward):
+    def push(self, state, action, next_state, next_action_mask, reward):
         """Save a transition"""
         # add this because other replay memory takes multimodal, and this take unimodal
         state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
         next_state = torch.tensor(next_state,
                                   dtype=torch.float32,
                                   device=self.device).unsqueeze(0) if next_state is not None else None
-        self.memory.append(self.Transition(state, action, next_state, reward))
+        self.memory.append(self.Transition(state, action, next_state, next_action_mask, reward))
 
     def sample(self, batch_size):
         if len(self.memory) < batch_size:

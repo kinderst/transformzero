@@ -23,7 +23,7 @@ class DQNAgent(Agent):
     https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
     """
     def __init__(self, env, batch_size=128, gamma=0.99, eps_start=0.9, eps_end=0.05,
-                 eps_decay=1000, tau=0.005, lr=1e-4, replay_mem_size=10000, model_type="fc"):
+                 eps_decay=1000, tau=0.005, lr=1e-4, replay_mem_size=10000, model_type="fc", use_action_mask=False):
         super().__init__(env)
         # constants
         self.batch_size = batch_size  # the number of transitions sampled from the replay buffer
@@ -32,6 +32,7 @@ class DQNAgent(Agent):
         self.eps_end = eps_end  # the final value of epsilon
         self.eps_decay = eps_decay  # controls the rate of exponential decay of epsilon, higher means a slower decay
         self.tau = tau  # the update rate of the target network
+        self.use_action_mask = use_action_mask  # to use action mask or not (helps computational efficiency when not)
 
         # torch, networks
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -59,7 +60,7 @@ class DQNAgent(Agent):
 
         # replay memory
         self.Transition = namedtuple('Transition',
-                                     ('state', 'action', 'next_state', 'reward'))
+                                     ('state', 'action', 'next_state', 'next_action_mask', 'reward'))
         self.memory = ReplayMemory(replay_mem_size, self.Transition, self.device)
 
     def select_action(self, obs, action_mask=None) -> int:
@@ -96,14 +97,15 @@ class DQNAgent(Agent):
             # Initialize the environment and get it's state
             total_reward = 0
             observation, info = self.env.reset()
+            action_mask = info['action_mask'] if 'action_mask' in info else None
             # observation_tensor = torch.tensor(observation, dtype=torch.float32, device=self.device).unsqueeze(0)
             for t in count():
                 current_eps = self.eps_end + (self.eps_start - self.eps_end) * \
                                 math.exp(-1. * steps_done / self.eps_decay)
-                action_mask = info['action_mask'] if 'action_mask' in info else None
                 action = self.select_action_with_eps(observation, current_eps, action_mask)
                 action_tensor = torch.tensor([[action]], device=self.device, dtype=torch.long)
-                next_observation, reward, terminated, truncated, info = self.env.step(action)
+                next_observation, reward, terminated, truncated, next_info = self.env.step(action)
+                next_action_mask = next_info['action_mask'] if 'action_mask' in next_info else None
                 steps_done += 1
                 total_reward += reward
                 reward_tensor = torch.tensor([reward], device=self.device)
@@ -111,16 +113,19 @@ class DQNAgent(Agent):
 
                 if terminated:
                     next_observation = None
+                    next_action_mask = None
                 # else:
                 #     next_observation_tensor = torch.tensor(next_observation,
                 #                                            dtype=torch.float32,
                 #                                            device=self.device).unsqueeze(0)
 
                 # Store the transition in memory
-                self.memory.push(observation, action_tensor, next_observation, reward_tensor)
+                self.memory.push(observation, action_tensor, next_observation, next_action_mask, reward_tensor)
 
                 # Move to the next state
                 observation = next_observation
+                action_mask = next_action_mask
+
                 # observation_tensor = next_observation_tensor
 
                 # Perform one step of the optimization (on the policy network)
@@ -172,6 +177,11 @@ class DQNAgent(Agent):
         state_batch = torch.cat(batch.state)
         action_batch = torch.cat(batch.action)
         reward_batch = torch.cat(batch.reward)
+        if self.use_action_mask:
+            # Pad the mask arrays to the same length
+            max_len = max(len(row_mask) for row_mask in batch.next_action_mask if row_mask is not None)
+            next_action_mask_batch = [np.append(row_mask, [0] * (max_len - len(row_mask))) for row_mask in batch.next_action_mask if row_mask is not None]
+            next_action_mask_batch = torch.tensor(np.array(next_action_mask_batch), dtype=torch.long)
 
         # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
         # columns of actions taken. These are the actions which would've been taken
@@ -185,7 +195,11 @@ class DQNAgent(Agent):
         # state value or 0 in case the state was final.
         next_state_values = torch.zeros(self.batch_size, device=self.device)
         with torch.no_grad():
-            next_state_values[non_final_mask] = self.target_net(non_final_next_states).max(1)[0]
+            if self.use_action_mask:
+                # https://discuss.pytorch.org/t/selecting-from-a-2d-tensor-with-rows-of-column-indexes/167717
+                next_state_values[non_final_mask] = self.target_net(non_final_next_states)[torch.arange(len(non_final_next_states)).unsqueeze(1), next_action_mask_batch].max(1)[0]
+            else:
+                next_state_values[non_final_mask] = self.target_net(non_final_next_states).max(1)[0]
         # Compute the expected Q values
         expected_state_action_values = (next_state_values * self.gamma) + reward_batch
 
