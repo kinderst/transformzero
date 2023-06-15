@@ -7,12 +7,12 @@ from buffers.dqn_replay_memory import ReplayMemory
 
 class TestReplayMemory(unittest.TestCase):
     def setUp(self) -> None:
-        self.Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
+        self.Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'next_state_mask', 'reward'))
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     def test_push_and_sample(self):
         memory = ReplayMemory(100, self.Transition, self.device)
-        transition = self.Transition(1, 2, 3, 4)
+        transition = self.Transition(1, 2, 3, 4, 5)
         memory.push(*transition)  # Use * to unpack the transition elements
         self.assertEqual(len(memory), 1)
 
@@ -23,9 +23,9 @@ class TestReplayMemory(unittest.TestCase):
     def test_capacity(self):
         memory = ReplayMemory(2, self.Transition, self.device)
         transitions = [
-            self.Transition(1, 2, 3, 4),
-            self.Transition(5, 6, 7, 8),
-            self.Transition(9, 10, 11, 12)
+            self.Transition(1, 2, 3, 4, 5),
+            self.Transition(5, 6, 7, 8, 9),
+            self.Transition(9, 10, 11, 12, 13)
         ]
 
         for transition in transitions:
@@ -47,7 +47,7 @@ class TestReplayMemory(unittest.TestCase):
         capacity = 100
         memory = ReplayMemory(capacity, self.Transition, self.device)
         transitions = [
-            self.Transition(i, i+1, i+2, i+3) for i in range(capacity + 10)
+            self.Transition(i, i+1, i+2, i+3, i+4) for i in range(capacity + 10)
         ]
 
         for transition in transitions:
@@ -59,7 +59,7 @@ class TestReplayMemory(unittest.TestCase):
 
     def test_transition_attributes(self):
         memory = ReplayMemory(100, self.Transition, self.device)
-        transition = self.Transition(1, 2, 3, 4)
+        transition = self.Transition(1, 2, 3, 4, 5)
         memory.push(*transition)  # Use * to unpack the transition elements
 
         sampled_transitions = memory.sample(1)

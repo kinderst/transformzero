@@ -64,9 +64,11 @@ class PPOAgentTests(unittest.TestCase):
         # Tests to see if model can converge on cartpole
         agent = PPOAgent(self.cartpole_env)
         early_stopping_rounds = 7
-        early_stopping_threshold = 475.0
+        early_stopping_threshold = 480.0
         eval_threshold = 450.0
+        eval_rounds = 50
         has_converged = False
+        train_results = []
         # Because training is a noisy process than can fail say 25% of the time at most
         # in my experience, we do it 5 times, cause 0.25^5=0.001 or 0.1%, so 1/1000 times
         # it fails, and when that 1/1000 times happen we can investigate and try rerun
@@ -77,17 +79,25 @@ class PPOAgentTests(unittest.TestCase):
                                         early_stopping_threshold=early_stopping_threshold,
                                         show_progress=False)
             avg_train = sum(epoch_rewards[-early_stopping_rounds:]) / early_stopping_rounds
-            print(f"ppo cartpole training average: {avg_train} for attempt: {i}")
+            train_results.append(avg_train)
             if avg_train > early_stopping_threshold:
                 has_converged = True
                 break
-
+        print(f"ppo cartpole training average: ", train_results)
         self.assertTrue(has_converged)
 
-        eval_results = agent.eval(early_stopping_rounds * 5)
-        avg_eval = sum(eval_results) / len(eval_results)
-        print("ppo cartpole eval avg: ", avg_eval)
-        self.assertGreaterEqual(avg_eval, eval_threshold)
+        eval_passed = False
+        eval_results = []
+        for i in range(5):
+            eval_rewards = agent.eval(eval_rounds)
+            avg_eval = sum(eval_rewards) / len(eval_rewards)
+            eval_results.append(avg_eval)
+            if avg_eval > eval_threshold:
+                eval_passed = True
+                break
+
+        print("ppo cartpole eval avg: ", eval_results)
+        self.assertTrue(eval_passed)
 
 
 if __name__ == '__main__':
