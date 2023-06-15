@@ -216,7 +216,7 @@ class DQNAgent(Agent):
         loss.backward()
         # In-place gradient clipping, don't want to do norm because we have sparse gradients and
         # we don't want norm to penalize as a whole just the individuals
-        torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 1)
+        torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 10)
         self.optimizer.step()
 
     def eval(self, num_episodes: int) -> list:

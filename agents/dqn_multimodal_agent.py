@@ -100,7 +100,7 @@ class MultimodalDQNAgent(DQNAgent):
         self.optimizer.zero_grad()
         loss.backward()
         # In-place gradient clipping
-        torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 1)
+        torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 10)
         self.optimizer.step()
 
     def investigate_model_outputs(self, obs: dict) -> np.ndarray:
