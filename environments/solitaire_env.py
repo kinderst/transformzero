@@ -251,8 +251,8 @@ class SolitaireWorldEnv(gym.Env):
         agent_reward_deck_to_suit = 15/10
         agent_reward_pile_to_suit = 10/10
         agent_reward_pile_to_pile = 0
-        agent_reward_pile_card_reveal = 5/10
-        agent_reward_suit_to_pile = -15/10
+        agent_reward_pile_card_reveal = 0
+        agent_reward_suit_to_pile = -10/10
         agent_reward_deck_cycle = 0
         agent_reward_deck_flip = 0
         agent_reward_victory = 30/10
