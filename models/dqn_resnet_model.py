@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 
+from models.min_gpt import NewGELU
+
 
 class ResidualBlock(nn.Module):
     def __init__(self, in_channels, out_channels):
@@ -43,13 +45,14 @@ class ResNet(nn.Module):
         self.num_layers = num_layers
         self.input_shape = input_shape
 
-        self.conv = nn.Conv2d(input_shape[0], 64, kernel_size=3, stride=1, padding=1, bias=False)
-        self.bn = nn.BatchNorm2d(64)
-        self.relu = nn.ReLU(inplace=True)
+        self.conv = nn.Conv2d(input_shape[0], 32, kernel_size=1, stride=1, padding=0, bias=False)
+        self.bn = nn.BatchNorm2d(32)
+        # self.relu = nn.ReLU(inplace=True)
+        self.relu = NewGELU()
 
-        self.residual_layers = self.create_residual_layers(64)
+        self.residual_layers = self.create_residual_layers(32)
 
-        self.fc = nn.Linear(64 * input_shape[1] * input_shape[2], num_actions)
+        self.fc = nn.Linear(32 * input_shape[1] * input_shape[2], num_actions)
 
     def create_residual_layers(self, channels):
         layers = []
