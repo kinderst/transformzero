@@ -63,7 +63,7 @@ class PPOAgentTests(unittest.TestCase):
     def test_train_and_eval_cartpole(self) -> None:
         # Tests to see if model can converge on cartpole
         agent = PPOAgent(self.cartpole_env)
-        early_stopping_rounds = 7
+        early_stopping_rounds = 10
         early_stopping_threshold = 480.0
         eval_threshold = 450.0
         eval_rounds = 50
