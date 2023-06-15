@@ -250,11 +250,11 @@ class SolitaireWorldEnv(gym.Env):
         agent_reward_deck_to_pile = 5/10
         agent_reward_deck_to_suit = 15/10
         agent_reward_pile_to_suit = 10/10
-        agent_reward_pile_to_pile = -2.5/10
+        agent_reward_pile_to_pile = 0
         agent_reward_pile_card_reveal = 5/10
-        agent_reward_suit_to_pile = -17/10
-        agent_reward_deck_cycle = -2/10
-        agent_reward_deck_flip = -2/10
+        agent_reward_suit_to_pile = -15/10
+        agent_reward_deck_cycle = 0
+        agent_reward_deck_flip = 0
         agent_reward_victory = 30/10
 
         # action 0 is tapping deck

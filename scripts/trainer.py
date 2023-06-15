@@ -62,7 +62,7 @@ def train_agent(env_name, agent_name, num_epochs):
         early_stopping_rounds = 50
     elif agent_name == "multidqn":
         agent = MultimodalDQNAgent(env, lr=dqn_lr, model_type="multires",
-                                   eps_decay=dqn_eps_decay, eps_end=0.1, gamma=0.7, use_action_mask=dqn_use_action_mask)
+                                   eps_decay=dqn_eps_decay, eps_end=0.1, gamma=0.9, use_action_mask=dqn_use_action_mask)
         early_stopping_rounds = 50
     elif agent_name == "ppo":
         agent = PPOAgent(env)
