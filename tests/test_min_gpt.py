@@ -124,7 +124,7 @@ class MinGPTTests(unittest.TestCase):
         train_config.max_iters = 10000
         train_config.num_workers = 0
         train_config.val_interval = 100
-        train_config.patience = 20
+        train_config.patience = 25
         trainer = Trainer(train_config, model, train_lunar_dataset, val_lunar_dataset)
 
         trainer.run()
