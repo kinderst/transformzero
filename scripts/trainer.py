@@ -48,7 +48,7 @@ def train_agent(env_name, agent_name, num_epochs):
         env = SolitaireWorldEnv(obs_type="multiimg")
         early_stopping_threshold = 50.0
         dqn_lr = 5e-3
-        dqn_eps_decay = 10000
+        dqn_eps_decay = 12500
         dqn_use_action_mask = True
     else:
         print(f"No envs with name: {str(env_name)} found, exiting...")
@@ -60,7 +60,7 @@ def train_agent(env_name, agent_name, num_epochs):
         early_stopping_rounds = 50
     elif agent_name == "multidqn":
         agent = MultimodalDQNAgent(env, lr=dqn_lr, model_type="multires",
-                                   eps_decay=dqn_eps_decay, eps_end=0.1, gamma=0.99, use_action_mask=dqn_use_action_mask)
+                                   eps_decay=dqn_eps_decay, eps_end=0.1, gamma=0.8, use_action_mask=dqn_use_action_mask)
         early_stopping_rounds = 50
     elif agent_name == "ppo":
         agent = PPOAgent(env)

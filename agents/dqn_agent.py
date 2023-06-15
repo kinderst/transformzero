@@ -215,7 +215,8 @@ class DQNAgent(Agent):
         self.optimizer.zero_grad()
         loss.backward()
         # In-place gradient clipping
-        torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 100)
+        # torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 100)
+        torch.nn.utils.clip_grad_norm_(self.policy_net.parameters(), 1)
         self.optimizer.step()
 
     def eval(self, num_episodes: int) -> list:
