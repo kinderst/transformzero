@@ -44,7 +44,7 @@ class ResidualBlock(nn.Module):
         self.bn1 = nn.BatchNorm2d(out_channels)
         # self.relu = nn.ReLU(inplace=True)
         self.relu = NewGELU()
-        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False)
+        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=1, stride=1, padding=0, bias=False)
         self.bn2 = nn.BatchNorm2d(out_channels)
         # self.spatial_attention = SpatialAttention(out_channels)
         # self.channel_attention = ChannelAttention(out_channels)
