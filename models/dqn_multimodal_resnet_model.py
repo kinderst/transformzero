@@ -160,12 +160,14 @@ class MultimodalResnetAndFC(nn.Module):
         # Fusion layers
         fusion_input_size = (len(self.img_modalities) + len(self.flat_modalities)) * num_actions
         self.layer_norm1 = nn.LayerNorm(fusion_input_size)
-        num_between = (fusion_input_size + num_actions) // 2
-        self.fc1 = nn.Linear(fusion_input_size, num_between)
-        self.layer_norm2 = nn.LayerNorm(num_between)
         self.gelu = NewGELU()
-        self.dropout = nn.Dropout(p=dropout_rate)
-        self.fc2 = nn.Linear(num_between, num_actions)
+        self.fc1 = nn.Linear(fusion_input_size, num_actions)
+        # num_between = (fusion_input_size + num_actions) // 2
+        # self.fc1 = nn.Linear(fusion_input_size, num_between)
+        # self.layer_norm2 = nn.LayerNorm(num_between)
+        # self.gelu = NewGELU()
+        # self.dropout = nn.Dropout(p=dropout_rate)
+        # self.fc2 = nn.Linear(num_between, num_actions)
         # init weights
         self.apply(self._init_weights)
 
@@ -209,9 +211,10 @@ class MultimodalResnetAndFC(nn.Module):
 
         combined_features = torch.cat(img_features + flat_features, dim=1)
         normalized_features1 = self.layer_norm1(combined_features)
-        x = self.fc1(normalized_features1)
-        normalized_features2 = self.layer_norm2(x)
-        x = self.gelu(normalized_features2)
-        x = self.dropout(x)
-        x = self.fc2(x)
+        x = self.gelu(normalized_features1)
+        x = self.fc1(x)
+        # normalized_features2 = self.layer_norm2(x)
+        # x = self.gelu(normalized_features2)
+        # x = self.dropout(x)
+        # x = self.fc2(x)
         return x
