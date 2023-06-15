@@ -50,8 +50,8 @@ class DQNAgent(Agent):
             self.target_net = ResNet(2, observation.shape, n_actions).to(self.device)
         elif model_type == "multires":
             input_shapes = {modality: array.shape for modality, array in observation.items()}
-            self.policy_net = MultimodalResnetAndFC(2, input_shapes, n_actions).to(self.device)
-            self.target_net = MultimodalResnetAndFC(2, input_shapes, n_actions).to(self.device)
+            self.policy_net = MultimodalResnetAndFC(1, input_shapes, n_actions).to(self.device)
+            self.target_net = MultimodalResnetAndFC(1, input_shapes, n_actions).to(self.device)
             # self.policy_net = MultimodalCNN(2, input_shapes, n_actions).to(self.device)
             # self.target_net = MultimodalCNN(2, input_shapes, n_actions).to(self.device)
         self.target_net.load_state_dict(self.policy_net.state_dict())

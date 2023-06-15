@@ -70,11 +70,3 @@ class ResNet(nn.Module):
         out = out.view(out.size(0), -1)
         out = self.fc(out)
         return out
-
-# Example usage
-# num_layers = 3  # Specify the number of layers in the ResNet
-# input_shape = (3, 25, 25)
-# num_actions = 4  # Specify the number of output actions
-#
-# model = ResNet(num_layers, input_shape, num_actions)
-# print(model)
