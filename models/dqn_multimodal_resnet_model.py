@@ -46,8 +46,8 @@ class ResidualBlock(nn.Module):
         self.relu = NewGELU()
         self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(out_channels)
-        self.spatial_attention = SpatialAttention(out_channels)
-        self.channel_attention = ChannelAttention(out_channels)
+        # self.spatial_attention = SpatialAttention(out_channels)
+        # self.channel_attention = ChannelAttention(out_channels)
 
         if in_channels != out_channels:
             self.downsample = nn.Sequential(
@@ -67,8 +67,8 @@ class ResidualBlock(nn.Module):
         out = self.conv2(out)
         out = self.bn2(out)
 
-        out = self.spatial_attention(out)
-        out = self.channel_attention(out)
+        # out = self.spatial_attention(out)
+        # out = self.channel_attention(out)
 
         identity = self.downsample(identity)
 
@@ -166,6 +166,19 @@ class MultimodalResnetAndFC(nn.Module):
         self.gelu = NewGELU()
         self.dropout = nn.Dropout(p=dropout_rate)
         self.fc2 = nn.Linear(num_between, num_actions)
+        # init weights
+        self.apply(self._init_weights)
+
+    def _init_weights(self, module):
+        if isinstance(module, nn.Linear):
+            torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
+            if module.bias is not None:
+                torch.nn.init.zeros_(module.bias)
+        elif isinstance(module, nn.Embedding):
+            torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
+        elif isinstance(module, nn.LayerNorm):
+            torch.nn.init.zeros_(module.bias)
+            torch.nn.init.ones_(module.weight)
 
     def forward(self, state_batch):
         img_tensor_batch = {

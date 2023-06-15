@@ -50,7 +50,7 @@ def train_agent(env_name, agent_name, num_epochs):
         early_stopping_threshold = 50.0
         dqn_lr = 1e-2
         dqn_eps_decay = 12500
-        dqn_tau = 0.05
+        dqn_tau = 0.025
         dqn_use_action_mask = True
     else:
         print(f"No envs with name: {str(env_name)} found, exiting...")
