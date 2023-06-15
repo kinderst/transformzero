@@ -180,7 +180,11 @@ class DQNAgent(Agent):
         if self.use_action_mask:
             # Pad the mask arrays to the same length
             max_len = max(len(row_mask) for row_mask in batch.next_action_mask if row_mask is not None)
-            next_action_mask_batch = [np.append(row_mask, [0] * (max_len - len(row_mask))) for row_mask in batch.next_action_mask if row_mask is not None]
+            # note: instead of padding with zero, could also just pad with row_mask[0] which is some (first) action
+            # in the mask, because when we take max anyway, doesn't matter if it is duplicated. But 0 works for
+            # solitaire
+            next_action_mask_batch = [np.append(row_mask, [row_mask[0]] * (max_len - len(row_mask))) for row_mask in batch.next_action_mask if row_mask is not None]
+            # next_action_mask_batch = [np.append(row_mask, [0] * (max_len - len(row_mask))) for row_mask in batch.next_action_mask if row_mask is not None]
             next_action_mask_batch = torch.tensor(np.array(next_action_mask_batch), dtype=torch.long)
 
         # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
