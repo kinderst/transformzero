@@ -9,12 +9,13 @@ import gymnasium as gym
 from datasets.float_dataset import FloatDataset
 from datasets.lunar_dataset import LunarDataset
 from datasets.lunar_generator import get_random_episode_transitions
-from models.min_gpt import GPT
+# from models.min_gpt import GPT
+from models.min_gpt import MultimodalGPT
 from utils.min_gpt_utils import set_seed, eval_split
 from trainers.min_gpt_trainer import Trainer
 
 
-class MinGPTTests(unittest.TestCase):
+class MultimodalMinGPTTests(unittest.TestCase):
     def loop_random_single_example_eval(self, model, dataset, threshold, name_string) -> None:
         single_passed = False
         single_results = []
@@ -26,7 +27,7 @@ class MinGPTTests(unittest.TestCase):
             if error_diff < threshold:
                 single_passed = True
                 break
-        print(f"minGPT {name_string} single results: {single_results}")
+        print(f"MultimodalMinGPT {name_string} single results: {single_results}")
         self.assertTrue(single_passed)
 
     def setUp(self) -> None:
@@ -41,13 +42,17 @@ class MinGPTTests(unittest.TestCase):
         val_dataset = FloatDataset('val')
 
         # Instantiate minGPT-TS model
-        model_config = GPT.get_default_config()
+        model_config = MultimodalGPT.get_default_config()
         model_config.model_type = 'gpt-nano'
         # model_config.vocab_size = train_dataset.get_vocab_size()
         model_config.in_dim = 3  # state_dim_1, state_dim_2, action_scalar
         model_config.out_dim = 2  # state_dim_1, state_dim_2
+        model_config.modality_shapes = {
+            "flatstate": 2,  # 2 dim simple state
+            "embedaction": 4  # we usually would do action_space.n or num_actions here...
+        }
         model_config.block_size = train_dataset.get_block_size()
-        model = GPT(model_config)
+        model = MultimodalGPT(model_config)
 
         # Instantiate minGPT trainer
         train_config = Trainer.get_default_config()
@@ -63,7 +68,7 @@ class MinGPTTests(unittest.TestCase):
         # train eval, which is only ever done once
         with torch.no_grad():
             train_score = eval_split(model, self.device, train_dataset)
-        print(f"minGPT dummy train results: {train_score}")
+        print(f"MultimodalMinGPT dummy train results: {train_score}")
         self.assertLessEqual(train_score, 0.0005)
 
         val_passed = False
@@ -77,7 +82,7 @@ class MinGPTTests(unittest.TestCase):
                     break
                 else:
                     val_dataset = FloatDataset('val')  # do it down here, since already created one first time
-        print(f"minGPT dummy val results: {val_results}")
+        print(f"MultimodalMinGPT dummy val results: {val_results}")
         self.assertTrue(val_passed)
 
         test_passed = False
@@ -91,7 +96,7 @@ class MinGPTTests(unittest.TestCase):
                 if test_score < 0.0005:
                     test_passed = True
                     break
-        print(f"minGPT dummy test results: {test_results}")
+        print(f"MultimodalMinGPT dummy test results: {test_results}")
         self.assertTrue(test_passed)
 
         # and to check on an individual example
@@ -104,24 +109,28 @@ class MinGPTTests(unittest.TestCase):
         obs, info = env.reset()
 
         # generate train, val, and test data by just taking random steps in lunar lander v2
-        train_lunar_data_arr = get_random_episode_transitions(env, 200, 10, self.device)
-        val_lunar_data_arr = get_random_episode_transitions(env, 200, 10, self.device)
+        train_lunar_data_arr = get_random_episode_transitions(env, 200, 10, self.device, use_one_hot=False)
+        val_lunar_data_arr = get_random_episode_transitions(env, 200, 10, self.device, use_one_hot=False)
 
         # format them into "Dataset" objects like Torch likes
         train_lunar_dataset = LunarDataset(train_lunar_data_arr)
         val_lunar_dataset = LunarDataset(val_lunar_data_arr)
 
-        model_config = GPT.get_default_config()
+        model_config = MultimodalGPT.get_default_config()
         model_config.model_type = 'gpt-nano'
         # model_config.vocab_size = train_dataset.get_vocab_size()  # no vocab size, n_dim in and out...
         model_config.in_dim = env.action_space.n + len(obs)  # Lunar lander state space is 8, and action space is 4
         model_config.out_dim = len(obs)  # we are predicting next state conditioned on previous time steps with action
+        model_config.modality_shapes = {
+            "flatstate": len(obs),  # 2 dim simple state
+            "embedaction": env.action_space.n
+        }
         model_config.block_size = train_lunar_dataset.get_block_size()
-        model = GPT(model_config)
+        model = MultimodalGPT(model_config)
 
         train_config = Trainer.get_default_config()
         train_config.learning_rate = 5e-4  # the model we're using is so small that we can go a bit faster
-        train_config.max_iters = 10000
+        train_config.max_iters = 7500
         train_config.num_workers = 0
         train_config.val_interval = 100
         train_config.patience = 25
@@ -134,7 +143,7 @@ class MinGPTTests(unittest.TestCase):
         # train eval, which is only ever done once
         with torch.no_grad():
             train_score = eval_split(model, self.device, train_lunar_dataset)
-        print(f"minGPT lunar train results: {train_score}")
+        print(f"MultimodalMinGPT lunar train results: {train_score}")
         self.assertLessEqual(train_score, 0.001)
 
         val_passed = False
@@ -147,15 +156,15 @@ class MinGPTTests(unittest.TestCase):
                     val_passed = True
                     break
                 else:
-                    val_lunar_data_arr = get_random_episode_transitions(env, 200, 10, self.device)
+                    val_lunar_data_arr = get_random_episode_transitions(env, 200, 10, self.device, use_one_hot=False)
                     val_lunar_dataset = LunarDataset(val_lunar_data_arr)
-        print(f"minGPT lunar val results: {val_results}")
+        print(f"MultimodalMinGPT lunar val results: {val_results}")
         self.assertTrue(val_passed)
 
         test_passed = False
         test_results = []
         for i in range(3):
-            test_lunar_data_arr = get_random_episode_transitions(env, 200, 10, self.device)
+            test_lunar_data_arr = get_random_episode_transitions(env, 200, 10, self.device, use_one_hot=False)
             test_lunar_dataset = LunarDataset(test_lunar_data_arr)
             # test eval
             with torch.no_grad():
@@ -164,11 +173,11 @@ class MinGPTTests(unittest.TestCase):
                 if test_score < 0.003:
                     test_passed = True
                     break
-        print(f"minGPT lunar test results: {test_results}")
+        print(f"MultimodalMinGPT lunar test results: {test_results}")
         self.assertTrue(test_passed)
 
         # and to check on an individual example
-        single_lunar_data_arr = get_random_episode_transitions(env, 2, 10, self.device)
+        single_lunar_data_arr = get_random_episode_transitions(env, 2, 10, self.device, use_one_hot=False)
         single_lunar_dataset = LunarDataset(single_lunar_data_arr)
         self.loop_random_single_example_eval(model, single_lunar_dataset, 0.003, 'lunar')
 

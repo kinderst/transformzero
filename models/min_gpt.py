@@ -270,11 +270,11 @@ class GPT(nn.Module):
         device = idx.device
         b, t, c = idx.size()
         assert t <= self.block_size, f"Cannot forward sequence of length {t}, block size is only {self.block_size}"
-        pos = torch.arange(0, t, dtype=torch.long, device=device).unsqueeze(0) # shape (1, t)
+        pos = torch.arange(0, t, dtype=torch.long, device=device).unsqueeze(0)  # shape (1, t)
 
         # forward the GPT model itself
-        tok_emb = self.transformer.wte(idx) # token embeddings of shape (b, t, n_embd)
-        pos_emb = self.transformer.wpe(pos) # position embeddings of shape (1, t, n_embd)
+        tok_emb = self.transformer.wte(idx)  # token embeddings of shape (b, t, n_embd)
+        pos_emb = self.transformer.wpe(pos)  # position embeddings of shape (1, t, n_embd)
         x = self.transformer.drop(tok_emb + pos_emb)
         for block in self.transformer.h:
             x = block(x)
@@ -321,3 +321,52 @@ class GPT(nn.Module):
             idx = torch.cat((idx, idx_next), dim=1)
 
         return idx
+
+
+class MultimodalGPT(GPT):
+    def __init__(self, config):
+        super().__init__(config)
+        self.transformer = nn.ModuleDict(dict(
+            wpe=nn.Embedding(config.block_size, config.n_embd),
+            drop=nn.Dropout(config.embd_pdrop),
+            h=nn.ModuleList([Block(config) for _ in range(config.n_layer)]),
+            ln_f=nn.LayerNorm(config.n_embd),
+        ))
+        self.transformer.wte = nn.ModuleDict()
+        for key, value in config.modality_shapes.items():
+            num_modalities = len(config.modality_shapes.keys())
+            if key.startswith("embed"):
+                self.transformer.wte[key] = nn.Embedding(value, config.n_embd // num_modalities)
+            elif key.startswith("flat"):
+                self.transformer.wte[key] = nn.Linear(value, config.n_embd // num_modalities)
+            else:
+                raise ValueError(f"Unsupported modality: {key}")
+        assert config.n_embd % len(config.modality_shapes.keys()) == 0  # check that we have even fusion input
+
+    def forward(self, idx, targets=None):
+        device = idx.device
+        b, t, c = idx.size()
+        assert t <= self.block_size, f"Cannot forward sequence of length {t}, block size is only {self.block_size}"
+        pos = torch.arange(0, t, dtype=torch.long, device=device).unsqueeze(0)  # shape (1, t)
+
+        # forward the GPT model itself
+        # tok_emb = self.transformer.wte(idx)  # token embeddings of shape (b, t, n_embd)
+        state_emb = self.transformer.wte['flatstate'](idx[:, :, :-1])  # all but last col/feature
+        action_emb = self.transformer.wte['embedaction'](idx[:, :, -1:].to(torch.long).squeeze(dim=2))  # only action
+        # concatenate along the channel/n_embd size dim
+        tok_emb = torch.cat((state_emb, action_emb), dim=2)
+        pos_emb = self.transformer.wpe(pos)  # position embeddings of shape (1, t, n_embd)
+        x = self.transformer.drop(tok_emb + pos_emb)
+        for block in self.transformer.h:
+            x = block(x)
+        x = self.transformer.ln_f(x)
+        # logits = self.lm_head(x)
+        preds = self.lm_head(x)
+
+        # if we are given some desired targets also calculate the loss
+        loss = None
+        if targets is not None:
+            # loss = F.cross_entropy(logits.view(-1, logits.size(-1)), targets.view(-1), ignore_index=-1)
+            loss = F.huber_loss(preds, targets)
+
+        return preds, loss

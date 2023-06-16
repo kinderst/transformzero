@@ -3,7 +3,7 @@ import random
 import torch
 
 
-def get_random_episode_transitions(env, n_episodes, seq_len, device):
+def get_random_episode_transitions(env, n_episodes, seq_len, device, use_one_hot=True):
     n_actions = env.action_space.n
     data_arr = []
     for i in range(n_episodes):
@@ -15,9 +15,12 @@ def get_random_episode_transitions(env, n_episodes, seq_len, device):
         stacked_next_states = None
         while not done:
             action = random.randrange(n_actions)
-            action_one_hot = [0.] * n_actions
-            action_one_hot[action] = 1.
-            obs_and_action = np.concatenate((obs, np.array(action_one_hot)))
+            if use_one_hot:
+                action_one_hot = [0.] * n_actions
+                action_one_hot[action] = 1.
+                obs_and_action = np.concatenate((obs, np.array(action_one_hot)))
+            else:
+                obs_and_action = np.concatenate((obs, np.array([action])))
 
             state_action_tensor = torch.Tensor(obs_and_action).to(device)
 

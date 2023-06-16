@@ -251,7 +251,7 @@ class SolitaireWorldEnv(gym.Env):
         agent_reward_deck_to_suit = 15/10
         agent_reward_pile_to_suit = 10/10
         agent_reward_pile_to_pile = -1/10
-        agent_reward_pile_card_reveal = 5/10
+        agent_reward_pile_card_reveal = 7/10
         agent_reward_suit_to_pile = -10/10
         agent_reward_deck_cycle = 0
         agent_reward_deck_flip = 0
@@ -301,7 +301,7 @@ class SolitaireWorldEnv(gym.Env):
                 # set card val to 0 for empty at the given index
                 self.deck_cards[0,highest_nonzero_deck] = 0
                 self.deck_cards_known[0,highest_nonzero_deck] = 0
-                game_reward += agent_reward_deck_to_suit
+                game_reward += game_score_deck_to_suit
                 reward += agent_reward_deck_to_suit
 
                 # check if terminal/goal state, all suits at king
