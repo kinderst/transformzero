@@ -239,4 +239,4 @@ class DQNAgent(Agent):
     # Load the agent's model or parameters from a file
     def load_model(self, filepath) -> None:
         print(f"loading model {filepath}")
-        self.policy_net.load_state_dict(torch.load(filepath))
+        self.policy_net.load_state_dict(torch.load(filepath, map_location=torch.device(self.device)))

@@ -13,6 +13,7 @@ from environments.solitaire_env import SolitaireWorldEnv
 
 
 def eval_step_episode(env_name, agent_name, weights_path):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # Initialize environment
     if env_name == "cartpole":
         env = gym.make("CartPole-v1", render_mode="human")
@@ -21,9 +22,9 @@ def eval_step_episode(env_name, agent_name, weights_path):
     elif env_name == "grid":
         env = GridWorldEnv(render_mode="human", num_obstacles=0, obs_type="multiimg")
     elif env_name == "solitaire":
-        env = SolitaireWorldEnv(obs_type="img")
+        env = SolitaireWorldEnv(render_mode="human", obs_type="img")
     elif env_name == "solitairemulti":
-        env = SolitaireWorldEnv(obs_type="multiimg")
+        env = SolitaireWorldEnv(render_mode="human", obs_type="multiimg")
     else:
         print('err bad env name')
         return
@@ -57,6 +58,8 @@ def eval_step_episode(env_name, agent_name, weights_path):
 
         print("observation is: ", observation)
         model_outputs = agent.investigate_model_outputs(observation)
+        if action_mask is not None:
+            model_outputs = model_outputs[action_mask]
         print("model outputs: ", model_outputs)
 
         action = agent.select_action(observation, action_mask)

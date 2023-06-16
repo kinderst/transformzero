@@ -63,6 +63,35 @@ and does not guarantee that the code is perfect nor optimized, only that it can 
 However, this approach allows us to be more confident that the agents we are shipping work, and can provide proof
 for users when they use this package that the models will converge (at least once) via the tests.
 
+## Multimodality and Action Masks
+
+Two often underlooked aspects that go into making a robust Deep RL agent includes being able to handle multimodal
+input, as well as being able to mask out illegal actions.
+
+First, on multimodality, this package contains the Multimodal Resnet and FC model class, which as the name suggests
+handles image data with Resnet's and tabular data with fully connected layers. All it assumes is that the data
+passed in is a dictionary, where each modality is an entry in the dictionary with tabular data having keys that
+start with "flat", and image data keys that start with "img". From that it determines the proper shapes
+and passes it through the multimodal architecture, and outputs the results from the modality into a modality
+embedding dimension. Then the modality outputs are concatenated and fed through FC layers before outputting
+to the desired output space, i.e. num_actions.
+
+An example for a proof of concept of a (simple, small) working multimodal model as a DQN for Grid World is shown
+in the tests as "multimodal gridnone". I assume it will work for gridone and gridtwo even though it is just a test
+and therefore passes a bit of irrelevant data in this simple environment, but I haven't gotten around to testing
+that yet.
+
+On action masks, some small code adjustments are done for environments where utilizing a mask helps, such as
+this formulation of Solitaire. This is because we don't want the agent to consider all possible actions when
+determining Q-targets, instead only what actions would've been possible. Additionally, it just speeds up training
+because there is no reason to learn Q-values for actions which aren't legal moves. So, we assume the environment
+passes in the info (see Gymansium environment's "info" return from step) an action mask. From there, the agents
+(only DQN for now) can handle environments where that mask is passed appropriately.
+
+Right now the only environment where an action mask is practical is in the Solitaire environment, and to
+train an agent for that difficult environment is too time consuming for a test, there is no test proof of concept
+for mask, only the working set up which can be run from the trainer.py in scripts for proof.
+
 ## Using Transformers
 
 Specifically, decoder-only transformer based on GPT-2 model, implemented by Andrej Karpathy in

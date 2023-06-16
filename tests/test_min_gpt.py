@@ -164,7 +164,7 @@ class MinGPTTests(unittest.TestCase):
                 if test_score < 0.003:
                     test_passed = True
                     break
-        print(f"minGPT lunar test results: {val_results}")
+        print(f"minGPT lunar test results: {test_results}")
         self.assertTrue(test_passed)
 
         # and to check on an individual example
