@@ -3,7 +3,7 @@ import torch.nn as nn
 from torch.nn import functional as F
 import math
 
-from utils.min_gpt_utils import CfgNode
+from utils.min_gpt_utils import CfgNode, mask_loss_neg_inf
 
 """
 Credit to Andrej Karpathy for the implementation. I just changed it to handle time series input
@@ -367,6 +367,7 @@ class MultimodalGPT(GPT):
         loss = None
         if targets is not None:
             # loss = F.cross_entropy(logits.view(-1, logits.size(-1)), targets.view(-1), ignore_index=-1)
-            loss = F.huber_loss(preds, targets)
-
+            # loss = F.huber_loss(preds, targets)
+            preds_masked, targets_masked = mask_loss_neg_inf(preds, targets)
+            loss = F.huber_loss(preds_masked, targets_masked)
         return preds, loss

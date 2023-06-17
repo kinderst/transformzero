@@ -148,6 +148,8 @@ class Trainer:
                 if epochs_without_improvement >= config.patience:
                     break
 
+                model.train()  # set model back to train
+
             # iter termination conditions
             self.iter_num += 1
 

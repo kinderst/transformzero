@@ -28,13 +28,23 @@ def setup_logging(config):
         f.write(json.dumps(config.to_dict(), indent=4))
 
 
-def eval_split(model_param, device_param, dataset):
+def mask_loss_neg_inf(outputs, targets):
+    mask = torch.isfinite(targets).all(dim=-1).unsqueeze(-1)
+    targets_masked = targets * mask
+    targets_masked = torch.nan_to_num(targets_masked, nan=0.0)
+    outputs_masked = outputs * mask
+    return outputs_masked, targets_masked
+
+
+def eval_split(model_param, device_param, dataset, use_mask=False):
     results = []
     loader = DataLoader(dataset, batch_size=100, num_workers=0, drop_last=False)
     for b, (x, y) in enumerate(loader):
         x = x.to(device_param)
         y = y.to(device_param)
         model_output, _ = model_param(x)
+        if use_mask:
+            model_output, y = mask_loss_neg_inf(model_output, y)
         results.append(F.huber_loss(model_output, y).item())
 
     return sum(results)/len(results)

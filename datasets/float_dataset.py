@@ -14,11 +14,12 @@ class FloatDataset(Dataset):
     where I is "ignore", as the transformer is reading the input sequence
     """
 
-    def __init__(self, split, length=6, in_dim=3):
+    def __init__(self, split, length=6, in_dim=3, mask_all_but_last=False):
         assert split in {'train', 'test', 'val'}
         self.split = split
         self.length = length
         self.in_dim = in_dim
+        self.mask_all_but_last = mask_all_but_last
 
     def __len__(self):
         return 10000  # ...
@@ -51,5 +52,7 @@ class FloatDataset(Dataset):
 
         x = torch.tensor(state_actions[:-1])
         y = torch.tensor(state_actions[1:])[:, :-1]
+        if self.mask_all_but_last:
+            y[:-1, :] = float('-inf')
 
         return x, y
